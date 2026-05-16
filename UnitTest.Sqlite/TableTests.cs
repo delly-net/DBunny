@@ -199,7 +199,7 @@ public class TableTests : IDisposable
     public void ConnectionDescriptor_ShouldHaveCorrectProperties()
     {
         // Assert
-        Assert.Equal("TestConnection", _connectionDescriptor.Name);
+        Assert.Equal("Default", _connectionDescriptor.Name);
         Assert.Equal("SQLITE", _connectionDescriptor.DatabaseType);
         Assert.Contains("Data Source=", _connectionDescriptor.ConnectionString);
     }

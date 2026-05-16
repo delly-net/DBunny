@@ -1,6 +1,9 @@
 using System.Data.Common;
 using System.Linq;
 using Delly.DBunny;
+using Delly.DBunny.Connecting;
+using Delly.DBunny.Connecting.Extension;
+using Delly.DBunny.Providing;
 using Delly.DBunny.Providing.Extension;
 using Delly.DBunny.Sql.Extension;
 using Delly.DBunny.Sqlite;
@@ -10,14 +13,13 @@ namespace UnitTest.Sqlite;
 
 public class CrudTests : IDisposable
 {
-    private readonly SqliteProvider _provider;
+    private readonly IDbProvider _provider;
     private readonly DbConnection _connection;
     private readonly string _testDbPath;
     private readonly DbConnectionDescriptor _connectionDescriptor;
 
     public CrudTests()
     {
-        _provider = new SqliteProvider();
         _testDbPath = Path.Combine(Path.GetTempPath(), $"testdb_{Guid.NewGuid():N}.db");
 
         // 使用 SqliteConnectionDefine 定义连接
@@ -29,13 +31,14 @@ public class CrudTests : IDisposable
             .WithDefaultTimeout(30);
 
         // 创建连接描述器
-        _connectionDescriptor = new DbConnectionDescriptor(
-            "CrudTestConnection",
-            _provider.DatabaseType,
-            connectionDefine.ConnectionString
-        );
+        _connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(SqliteConnectionDefine.DATABASE_TYPE, "Default");
+        // 创建连接工厂
+        var connectionFactory = new DefaultDbConnectionFactory(_connectionDescriptor);
+        // 创建提供程序工厂
+        var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
 
         // 通过 Provider 获取连接
+        _provider = providerFactory.GetProvider(connectionFactory.GetDefaultConnection().DatabaseType)!;
         _connection = _provider.GetDbConnection(_connectionDescriptor.ConnectionString);
         _connection.Open();
     }
@@ -271,6 +274,7 @@ public class CrudTests : IDisposable
         await ExecuteNonQueryAsync(_connection, updateSql);
         var updatedResult = await ReadSingleAsync<UserRecord>(_connection,
             new Sqled("SELECT Age FROM [Users] WHERE Name = @name").Set("name", "WorkflowUser"));
+        Assert.NotNull(updatedResult);
         Assert.Equal(35, updatedResult.Age);
 
         // Delete
@@ -309,7 +313,7 @@ public class CrudTests : IDisposable
         var insertSql = new Sqled("INSERT INTO [Users] (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
             .Set("name", "NullAgeUser")
             .Set("email", "nullage@example.com")
-            .Set("age", null)
+            .Set("age", DBNull.Value)
             .Set("createdAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         await ExecuteNonQueryAsync(_connection, insertSql);
 
@@ -342,7 +346,7 @@ public class CrudTests : IDisposable
     public void ConnectionDescriptor_ShouldHaveCorrectProperties()
     {
         // Assert
-        Assert.Equal("CrudTestConnection", _connectionDescriptor.Name);
+        Assert.Equal("Default", _connectionDescriptor.Name);
         Assert.Equal("SQLITE", _connectionDescriptor.DatabaseType);
         Assert.Contains("Data Source=", _connectionDescriptor.ConnectionString);
         Assert.Contains("Pooling=False", _connectionDescriptor.ConnectionString);
@@ -434,12 +438,12 @@ public class CrudTests : IDisposable
         await ExecuteNonQueryAsync(_connection, sql);
     }
 
-    private async Task InsertUserAsync(string name, string email, int? age, string? createdAt = null)
+    private async Task InsertUserAsync(string name, string email, long? age, string? createdAt = null)
     {
         var insertSql = new Sqled("INSERT INTO [Users] (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
             .Set("name", name)
             .Set("email", email)
-            .Set("age", age)
+            .Set("age", age.HasValue ? age.Value : DBNull.Value)
             .Set("createdAt", createdAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         await ExecuteNonQueryAsync(_connection, insertSql);
     }
@@ -523,6 +527,6 @@ public class CrudTests : IDisposable
     {
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public int Age { get; set; }
+        public long Age { get; set; }
     }
 }
