@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
+		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
+	</PropertyGroup>
+
+	<!-- 仅给支持的框架开启 Nullable -->
+	<PropertyGroup Condition="'$(TargetFramework)'!='netstandard2.0'">
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<!-- 仅对 net8.0 开启 -->
+	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0'">
+		<IsAotCompatible>true</IsAotCompatible>
+		<PublishAotCompilationEnabled>true</PublishAotCompilationEnabled>
+		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+	</PropertyGroup>
+	
+	<ItemGroup>
+	  <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\Delly.DBunny\Delly.DBunny.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Delly.DBunny.Sqlite/Delly.DBunny.Sqlite.csproj" Id="a737013f-61a0-45c4-bb76-1416c7794186" />
+  <Project Path="Delly.DBunny/Delly.DBunny.csproj" />
+</Solution>
