@@ -6,12 +6,12 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Eazy.Data.General.Provider.Impl
+namespace Delly.DBunny.Providing
 {
     /// <summary>
     /// 默认数据库工厂
     /// </summary>
-    public sealed class DefaultDbFactory : IDbProviderFactory
+    public sealed class DefaultDbProviderFactory : IDbProviderFactory
     {
         private readonly Dictionary<string, IDbProvider> _providers;
 
@@ -19,7 +19,7 @@ namespace Eazy.Data.General.Provider.Impl
         /// 默认数据库工厂
         /// </summary>
         /// <param name="providers"></param>
-        public DefaultDbFactory(params IDbProvider[] providers)
+        public DefaultDbProviderFactory(params IDbProvider[] providers)
         {
             _providers = new Dictionary<string, IDbProvider>();
             Initialize(providers);
@@ -54,18 +54,18 @@ namespace Eazy.Data.General.Provider.Impl
         /// <summary>
         /// 获取提供程序
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="databaseType"></param>
         /// <returns></returns>
 #if NETSTANDARD2_0
-        public IDbProvider GetProvider(string name)
+        public IDbProvider GetProvider(string databaseType)
 #else
-        public IDbProvider? GetProvider(string name)
+        public IDbProvider? GetProvider(string databaseType)
 #endif
         {
 #if NETSTANDARD2_0
-            if (_providers.TryGetValue(name, out IDbProvider provider)) { return provider; }
+            if (_providers.TryGetValue(databaseType, out IDbProvider provider)) { return provider; }
 #else
-            if (_providers.TryGetValue(name, out IDbProvider? provider)) { return provider; }
+            if (_providers.TryGetValue(databaseType, out IDbProvider? provider)) { return provider; }
 #endif
 
             return null;

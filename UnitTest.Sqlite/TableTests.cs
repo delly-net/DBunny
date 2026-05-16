@@ -1,26 +1,43 @@
-using System.Data.Common;
-using System.Data.SQLite;
-using System.Linq;
 using Delly.DBunny;
+using Delly.DBunny.Connecting;
+using Delly.DBunny.Connecting.Extension;
+using Delly.DBunny.Providing;
 using Delly.DBunny.Providing.Extension;
 using Delly.DBunny.Sql.Extension;
 using Delly.DBunny.Sqlite;
+using System.Data.Common;
+using System.Linq;
 using Xunit;
 
 namespace UnitTest.Sqlite;
 
 public class TableTests : IDisposable
 {
-    private readonly SqliteProvider _provider;
+    private readonly IDbProvider _provider;
     private readonly DbConnection _connection;
     private readonly string _testDbPath;
+    private readonly DbConnectionDescriptor _connectionDescriptor;
 
     public TableTests()
     {
-        _provider = new SqliteProvider();
         _testDbPath = Path.Combine(Path.GetTempPath(), $"testdb_{Guid.NewGuid():N}.db");
-        var connectionString = $"Data Source={_testDbPath}";
-        _connection = _provider.GetDbConnection(connectionString);
+
+        // 使用 SqliteConnectionDefine 定义连接
+        var connectionDefine = new SqliteConnectionDefine()
+            .WithDataSource(_testDbPath)
+            .WithPooling(false)
+            .WithForeignKeys(true);
+
+        // 创建连接描述器
+        _connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(SqliteConnectionDefine.DATABASE_TYPE, "Default");
+        // 创建连接工厂
+        var connectionFactory = new DefaultDbConnectionFactory(_connectionDescriptor);
+        // 创建提供程序工厂
+        var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
+
+        // 通过 Provider 获取连接
+        _provider = providerFactory.GetProvider(connectionFactory.GetDefaultConnection().DatabaseType)!;
+        _connection = _provider.GetDbConnection(_connectionDescriptor.ConnectionString);
         _connection.Open();
     }
 
@@ -178,6 +195,22 @@ public class TableTests : IDisposable
         Assert.Equal(42, result);
     }
 
+    [Fact]
+    public void ConnectionDescriptor_ShouldHaveCorrectProperties()
+    {
+        // Assert
+        Assert.Equal("TestConnection", _connectionDescriptor.Name);
+        Assert.Equal("SQLITE", _connectionDescriptor.DatabaseType);
+        Assert.Contains("Data Source=", _connectionDescriptor.ConnectionString);
+    }
+
+    [Fact]
+    public void ConnectionDescriptor_ShouldContainTestDbPath()
+    {
+        // Assert
+        Assert.Contains(_testDbPath, _connectionDescriptor.ConnectionString);
+    }
+
     private async Task CreateSimpleTableAsync(string tableName, string columns)
     {
         var sql = $"CREATE TABLE [{tableName}]({columns});";
@@ -203,7 +236,7 @@ public class TableTests : IDisposable
         command.CommandText = sql.Sql;
         _provider.SetParameters(command, sql.Parameters);
         var result = await command.ExecuteScalarAsync();
-        return result != null && result != DBNull.Value ? (T)result : default!;
+        return result != null && result != DBNull.Value ? (T)Convert.ChangeType(result, typeof(T))! : default!;
     }
 
     public void Dispose()

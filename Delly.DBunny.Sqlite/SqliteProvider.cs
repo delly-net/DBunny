@@ -16,7 +16,7 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 数据库类型
         /// </summary>
-        public string DatabaseType => "SQLITE";
+        public string DatabaseType => SqliteConnectionDefine.DATABASE_TYPE;
 
         /// <summary>
         /// Sql 提供程序

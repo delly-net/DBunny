@@ -19,7 +19,7 @@ namespace Delly.DBunny.Connecting
         /// 主机数据库上下文配置工厂
         /// </summary>
         public DefaultDbConnectionFactory(
-            IEnumerable<DbConnectionDescriptor> providers
+            params DbConnectionDescriptor[] providers
             )
         {
             _descriptors = providers.ToDictionary(d => d.Name);

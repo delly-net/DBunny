@@ -28,6 +28,11 @@ namespace Delly.DBunny.Sqlite
         private const string DATE_TIME_KIND_KEY = "DateTimeKind";
 
         /// <summary>
+        /// 数据库类型
+        /// </summary>
+        public const string DATABASE_TYPE = "SQLITE";
+
+        /// <summary>
         /// Sqlite 连接定义
         /// </summary>
         public SqliteConnectionDefine()

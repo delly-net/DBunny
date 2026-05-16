@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Data.SQLite;
 using System.Linq;
 using Delly.DBunny;
 using Delly.DBunny.Providing.Extension;
@@ -14,13 +13,30 @@ public class CrudTests : IDisposable
     private readonly SqliteProvider _provider;
     private readonly DbConnection _connection;
     private readonly string _testDbPath;
+    private readonly DbConnectionDescriptor _connectionDescriptor;
 
     public CrudTests()
     {
         _provider = new SqliteProvider();
         _testDbPath = Path.Combine(Path.GetTempPath(), $"testdb_{Guid.NewGuid():N}.db");
-        var connectionString = $"Data Source={_testDbPath}";
-        _connection = _provider.GetDbConnection(connectionString);
+
+        // 使用 SqliteConnectionDefine 定义连接
+        var connectionDefine = new SqliteConnectionDefine()
+            .WithDataSource(_testDbPath)
+            .WithPooling(false)
+            .WithForeignKeys(true)
+            .WithCacheSize(2000)
+            .WithDefaultTimeout(30);
+
+        // 创建连接描述器
+        _connectionDescriptor = new DbConnectionDescriptor(
+            "CrudTestConnection",
+            _provider.DatabaseType,
+            connectionDefine.ConnectionString
+        );
+
+        // 通过 Provider 获取连接
+        _connection = _provider.GetDbConnection(_connectionDescriptor.ConnectionString);
         _connection.Open();
     }
 
@@ -255,7 +271,7 @@ public class CrudTests : IDisposable
         await ExecuteNonQueryAsync(_connection, updateSql);
         var updatedResult = await ReadSingleAsync<UserRecord>(_connection,
             new Sqled("SELECT Age FROM [Users] WHERE Name = @name").Set("name", "WorkflowUser"));
-        Assert.Equal(35, updatedResult?.Age);
+        Assert.Equal(35, updatedResult.Age);
 
         // Delete
         var deleteSql = new Sqled("DELETE FROM [Users] WHERE Name = @name").Set("name", "WorkflowUser");
@@ -283,6 +299,128 @@ public class CrudTests : IDisposable
         Assert.Equal(specialEmail, result.Email);
     }
 
+    [Fact]
+    public async Task InsertWithNullNullableColumn_ShouldHandleSuccessfully()
+    {
+        // Arrange
+        await CreateUsersTableAsync();
+
+        // Act
+        var insertSql = new Sqled("INSERT INTO [Users] (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+            .Set("name", "NullAgeUser")
+            .Set("email", "nullage@example.com")
+            .Set("age", null)
+            .Set("createdAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        await ExecuteNonQueryAsync(_connection, insertSql);
+
+        var selectSql = new Sqled("SELECT Age FROM [Users] WHERE Name = @name").Set("name", "NullAgeUser");
+        var result = await ExecuteScalarAsync<object?>(_connection, selectSql);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task InsertWithDateTime_ShouldStoreAndRetrieveCorrectly()
+    {
+        // Arrange
+        await CreateUsersTableAsync();
+        var testDateTime = new DateTime(2024, 6, 15, 14, 30, 45);
+        var formattedDate = testDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+
+        // Act
+        await InsertUserAsync("DateTimeUser", "datetime@example.com", 30, formattedDate);
+        var selectSql = new Sqled("SELECT CreatedAt FROM [Users] WHERE Name = @name").Set("name", "DateTimeUser");
+        var result = await ExecuteScalarAsync<string>(_connection, selectSql);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains("2024-06-15", result);
+    }
+
+    [Fact]
+    public void ConnectionDescriptor_ShouldHaveCorrectProperties()
+    {
+        // Assert
+        Assert.Equal("CrudTestConnection", _connectionDescriptor.Name);
+        Assert.Equal("SQLITE", _connectionDescriptor.DatabaseType);
+        Assert.Contains("Data Source=", _connectionDescriptor.ConnectionString);
+        Assert.Contains("Pooling=False", _connectionDescriptor.ConnectionString);
+        Assert.Contains("Foreign Keys=True", _connectionDescriptor.ConnectionString);
+    }
+
+    [Fact]
+    public async Task InsertLargeData_ShouldHandleSuccessfully()
+    {
+        // Arrange
+        await CreateUsersTableAsync();
+        var longName = new string('A', 100);
+        var longEmail = "very.long.email.address." + new string('b', 50) + "@example.com";
+
+        // Act
+        await InsertUserAsync(longName, longEmail, 50);
+        var result = await ReadSingleAsync<UserRecord>(_connection,
+            new Sqled("SELECT Name, Email FROM [Users] WHERE Name = @name").Set("name", longName));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(longName, result.Name);
+        Assert.Equal(longEmail, result.Email);
+    }
+
+    [Fact]
+    public async Task BatchInsert_ShouldInsertMultipleRecordsInTransaction()
+    {
+        // Arrange
+        await CreateUsersTableAsync();
+
+        // Act
+        using var transaction = _connection.BeginTransaction();
+        try
+        {
+            await InsertUserAsync("Batch1", "batch1@example.com", 20);
+            await InsertUserAsync("Batch2", "batch2@example.com", 30);
+            await InsertUserAsync("Batch3", "batch3@example.com", 40);
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+
+        var count = await GetRecordCountAsync("Users");
+
+        // Assert
+        Assert.Equal(3, count);
+    }
+
+    [Fact]
+    public async Task TransactionRollback_ShouldNotCommitChanges()
+    {
+        // Arrange
+        await CreateUsersTableAsync();
+        await InsertUserAsync("Existing", "existing@example.com", 25);
+        var countBefore = await GetRecordCountAsync("Users");
+
+        // Act
+        using var transaction = _connection.BeginTransaction();
+        try
+        {
+            await InsertUserAsync("RollbackUser", "rollback@example.com", 35);
+            transaction.Rollback();
+        }
+        catch
+        {
+            transaction.Rollback();
+        }
+
+        var countAfter = await GetRecordCountAsync("Users");
+
+        // Assert
+        Assert.Equal(countBefore, countAfter);
+    }
+
     private async Task CreateUsersTableAsync()
     {
         var sql = new Sqled();
@@ -296,7 +434,7 @@ public class CrudTests : IDisposable
         await ExecuteNonQueryAsync(_connection, sql);
     }
 
-    private async Task InsertUserAsync(string name, string email, int age, string? createdAt = null)
+    private async Task InsertUserAsync(string name, string email, int? age, string? createdAt = null)
     {
         var insertSql = new Sqled("INSERT INTO [Users] (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
             .Set("name", name)
@@ -334,7 +472,9 @@ public class CrudTests : IDisposable
         command.CommandText = sql.Sql;
         _provider.SetParameters(command, sql.Parameters);
         var result = await command.ExecuteScalarAsync();
-        return result != null && result != DBNull.Value ? (T)Convert.ChangeType(result, typeof(T)) : default!;
+        if (result == null || result == DBNull.Value)
+            return default!;
+        return typeof(T) == typeof(string) ? (T)result! : (T)Convert.ChangeType(result, typeof(T))!;
     }
 
     private async Task<T?> ReadSingleAsync<T>(DbConnection connection, Sqled sql) where T : class, new()
@@ -354,9 +494,10 @@ public class CrudTests : IDisposable
                 var properties = typeof(T).GetProperties();
                 foreach (var prop in properties)
                 {
-                    if (!reader.IsDBNull(reader.GetOrdinal(prop.Name)))
+                    var ordinal = reader.GetOrdinal(prop.Name);
+                    if (!reader.IsDBNull(ordinal))
                     {
-                        var value = reader[prop.Name];
+                        var value = reader[ordinal];
                         prop.SetValue(item, value is DBNull ? null : value);
                     }
                 }
