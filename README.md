@@ -32,6 +32,43 @@ dotnet add package Delly.DBunny.Sqlite
 
 ## Quick Start
 
+### Mode 1: Simple Single Database (Recommended for simple scenarios)
+
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.Sqlite;
+using Delly.DBunny.Sql.Extension;
+using System.Data.Common;
+
+// Create SQLite provider directly
+var provider = new SqliteProvider();
+var connectionString = "Data Source=mydb.db;Pooling=False";
+
+using var connection = provider.GetDbConnection(connectionString);
+connection.Open();
+
+// Execute a query
+var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
+    .Set("name", "John");
+
+using var command = provider.GetDbCommand(connection);
+command.CommandText = sql.Sql;
+provider.SetParameters(command, sql.Parameters);
+
+// Read data
+await provider.ReadAsync(connection, sql, async reader =>
+{
+    while (await reader.ReadAsync())
+    {
+        var id = reader["Id"];
+        var name = reader["Name"];
+        Console.WriteLine($"Id: {id}, Name: {name}");
+    }
+});
+```
+
+### Mode 2: Multi-Database Support (Recommended for scalability)
+
 ```csharp
 using Delly.DBunny;
 using Delly.DBunny.Connecting.Extension;
@@ -54,7 +91,7 @@ var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
 // Create connection factory
 var connectionFactory = new DefaultDbConnectionFactory(connectionDescriptor);
 
-// Create provider factory with SQLite provider
+// Create provider factory with SQLite provider (can swap to other providers)
 var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
 
 // Get provider and connection

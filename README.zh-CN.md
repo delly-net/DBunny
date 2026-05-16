@@ -32,6 +32,43 @@ dotnet add package Delly.DBunny.Sqlite
 
 ## 快速开始
 
+### 方式一：简单单数据库模式（推荐用于简单场景）
+
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.Sqlite;
+using Delly.DBunny.Sql.Extension;
+using System.Data.Common;
+
+// 直接创建 SQLite 提供者
+var provider = new SqliteProvider();
+var connectionString = "Data Source=mydb.db;Pooling=False";
+
+using var connection = provider.GetDbConnection(connectionString);
+connection.Open();
+
+// 执行查询
+var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
+    .Set("name", "John");
+
+using var command = provider.GetDbCommand(connection);
+command.CommandText = sql.Sql;
+provider.SetParameters(command, sql.Parameters);
+
+// 读取数据
+await provider.ReadAsync(connection, sql, async reader =>
+{
+    while (await reader.ReadAsync())
+    {
+        var id = reader["Id"];
+        var name = reader["Name"];
+        Console.WriteLine($"Id: {id}, Name: {name}");
+    }
+});
+```
+
+### 方式二：多数据库支持模式（推荐用于可扩展场景）
+
 ```csharp
 using Delly.DBunny;
 using Delly.DBunny.Connecting.Extension;
@@ -54,7 +91,7 @@ var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
 // 创建连接工厂
 var connectionFactory = new DefaultDbConnectionFactory(connectionDescriptor);
 
-// 创建提供者工厂，使用 SQLite 提供者
+// 创建提供者工厂，使用 SQLite 提供者（可切换为其他提供者）
 var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
 
 // 获取提供者和连接
