@@ -255,7 +255,7 @@ public class CrudTests : IDisposable
         await ExecuteNonQueryAsync(_connection, updateSql);
         var updatedResult = await ReadSingleAsync<UserRecord>(_connection,
             new Sqled("SELECT Age FROM [Users] WHERE Name = @name").Set("name", "WorkflowUser"));
-        Assert.Equal(35, updatedResult.Age);
+        Assert.Equal(35, updatedResult?.Age);
 
         // Delete
         var deleteSql = new Sqled("DELETE FROM [Users] WHERE Name = @name").Set("name", "WorkflowUser");
