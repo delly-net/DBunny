@@ -1,5 +1,9 @@
 # DBunny
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-Standard2.0%20%7C%20net5.0%20%7C%20net8.0-purple.svg)](https://dotnet.microsoft.com/)
+[![AOT Compatible](https://img.shields.io/badge/AOT-Compatible-success.svg)](https://learn.microsoft.com/zh-cn/dotnet/core/deploying/native-aot/)
+
 一个轻量级的 .NET 数据库抽象层，提供统一的 API 来处理多种数据库类型。DBunny 使用提供者模式来实现数据库特定的实现，同时保持通用接口。
 
 ## 特性
@@ -95,11 +99,17 @@ sql.Append(" AND Status = @status")
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+[MIT 许可证](LICENSE)
 
 ## 贡献
 
 欢迎贡献！请随时提交 Pull Request。
+
+## 相关链接
+
+- [文档](#) *[待更新]*
+- [问题反馈](https://github.com/delly-net/DBunny/issues)
+- [发布版本](https://github.com/delly-net/DBunny/releases)
 
 ## 作者
 

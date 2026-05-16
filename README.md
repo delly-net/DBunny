@@ -1,5 +1,9 @@
 # DBunny
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-Standard2.0%20%7C%20net5.0%20%7C%20net8.0-purple.svg)](https://dotnet.microsoft.com/)
+[![AOT Compatible](https://img.shields.io/badge/AOT-Compatible-success.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
+
 A lightweight .NET database abstraction layer that provides a unified API for working with multiple database types. DBunny uses a provider pattern to enable database-specific implementations while maintaining a common interface.
 
 ## Features
@@ -95,11 +99,17 @@ Generates database-specific SQL for:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[MIT License](LICENSE)
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Links
+
+- [Documentation](#) *[待更新]*
+- [Issues](https://github.com/delly-net/DBunny/issues)
+- [Releases](https://github.com/delly-net/DBunny/releases)
 
 ## Author
 
