@@ -3,6 +3,10 @@
 	<PropertyGroup>
 		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
 		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
+		<Authors>Delly.Net</Authors>
+		<Description>A lightweight .NET database abstraction layer that provides a unified API for working with multiple database types. DBunny uses a provider pattern to enable database-specific implementations while maintaining a common interface.</Description>
+		<PackageIcon>Bunny_128.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<!-- 仅给支持的框架开启 Nullable -->
@@ -16,5 +20,16 @@
 		<PublishAotCompilationEnabled>true</PublishAotCompilationEnabled>
 		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\Document\Logo\Bunny_128.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 </Project>
