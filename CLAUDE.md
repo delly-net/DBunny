@@ -92,6 +92,7 @@ To add support for a new database:
 - Nullable reference types where applicable (.NET 5.0+)
 - Database-specific names are quoted via `GetSpecialName()` in ISqlProvider
 - Parameters are passed as `IEnumerable<KeyValuePair<string, object>>`
+- **Constants** use UPPER_CASE with underscores (e.g., `DATA_SOURCE_KEY`, `DEFAULT_TIMEOUT_KEY`)
 
 ## License
 
