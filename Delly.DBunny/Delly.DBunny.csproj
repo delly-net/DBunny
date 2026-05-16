@@ -8,6 +8,7 @@
 		<Description>A lightweight .NET database abstraction layer that provides a unified API for working with multiple database types. DBunny uses a provider pattern to enable database-specific implementations while maintaining a common interface.</Description>
 		<PackageIcon>Bunny_128.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 
 	<!-- 仅给支持的框架开启 Nullable -->

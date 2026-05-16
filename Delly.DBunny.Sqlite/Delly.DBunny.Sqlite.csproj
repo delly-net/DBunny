@@ -8,6 +8,7 @@
 		<Description>Sqlite for Delly.DBunny</Description>
 		<PackageIcon>Bunny_128.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 
 	<!-- 仅给支持的框架开启 Nullable -->
