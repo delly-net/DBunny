@@ -33,22 +33,55 @@ dotnet add package Delly.DBunny.Sqlite
 ## 快速开始
 
 ```csharp
+using Delly.DBunny;
+using Delly.DBunny.Connecting.Extension;
+using Delly.DBunny.Providing;
+using Delly.DBunny.Providing.Extension;
 using Delly.DBunny.Sqlite;
+using Delly.DBunny.Sql.Extension;
+using System.Data.Common;
 
-// 创建 SQLite 提供者
-var provider = new SqliteProvider("Data Source=mydb.db");
+// 定义连接设置
+var connectionDefine = new SqliteConnectionDefine()
+    .WithDataSource("Data Source=mydb.db")
+    .WithPooling(false)
+    .WithForeignKeys(true);
+
+// 创建连接描述器
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    SqliteConnectionDefine.DATABASE_TYPE, "Default");
+
+// 创建连接工厂
+var connectionFactory = new DefaultDbConnectionFactory(connectionDescriptor);
+
+// 创建提供者工厂，使用 SQLite 提供者
+var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
+
+// 获取提供者和连接
+var provider = providerFactory.GetProvider(
+    connectionFactory.GetDefaultConnection().DatabaseType)!;
+
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
 
 // 执行查询
-var sql = new Sqled("SELECT * FROM Users WHERE Name = @name");
-sql.Set("name", "John");
+var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
+    .Set("name", "John");
 
-var result = provider.Execute(sql);
+using var command = provider.GetDbCommand(connection);
+command.CommandText = sql.Sql;
+provider.SetParameters(command, sql.Parameters);
 
 // 读取数据
-foreach (DataRow row in result.Tables[0].Rows)
+await provider.ReadAsync(connection, sql, async reader =>
 {
-    Console.WriteLine($"Id: {row["Id"]}, Name: {row["Name"]}");
-}
+    while (await reader.ReadAsync())
+    {
+        var id = reader["Id"];
+        var name = reader["Name"];
+        Console.WriteLine($"Id: {id}, Name: {name}");
+    }
+});
 ```
 
 ## 核心概念
@@ -58,12 +91,20 @@ foreach (DataRow row in result.Tables[0].Rows)
 SQL 命令的包装类，结合了 SQL 文本和参数：
 
 ```csharp
-var sql = new Sqled("SELECT * FROM Users WHERE Age > @minAge");
-sql.Set("minAge", 18);
+var sql = new Sqled("SELECT * FROM Users WHERE Age > @minAge")
+    .Set("minAge", 18);
 
-// 流式 API
+// 流式 API 构建查询
 sql.Append(" AND Status = @status")
     .Set("status", "Active");
+
+// 对于复杂 SQL，直接使用 Builder
+var createTableSql = new Sqled();
+createTableSql.Builder.AppendLine("CREATE TABLE [Users](");
+createTableSql.Builder.Append("    [Id] INTEGER NOT NULL PRIMARY KEY,");
+createTableSql.Builder.Append("    [Name] TEXT(100) NOT NULL,");
+createTableSql.Builder.AppendLine("    [Age] INTEGER NULL");
+createTableSql.Builder.AppendLine(");");
 ```
 
 ### 核心接口
@@ -78,6 +119,18 @@ sql.Append(" AND Status = @status")
 - 同步或异步读取数据
 - 获取数据库元数据（架构、表、列、索引）
 
+```csharp
+// 执行非查询操作（INSERT、UPDATE、DELETE）
+var insertSql = new Sqled("INSERT INTO [Users] (Name, Age) VALUES (@name, @age)")
+    .Set("name", "John Doe")
+    .Set("age", 30);
+
+using var command = provider.GetDbCommand(connection);
+command.CommandText = insertSql.Sql;
+provider.SetParameters(command, insertSql.Parameters);
+await command.ExecuteNonQueryAsync();
+```
+
 #### ISqlProvider
 
 生成数据库特定的 SQL 语句，用于：
@@ -87,6 +140,21 @@ sql.Append(" AND Status = @status")
 - 列操作（创建、重命名、复制、删除）
 - 索引操作（创建、获取）
 - .NET 类型与数据库类型之间的类型转换
+
+```csharp
+// 使用 SQL 提供者创建表
+var columnDefines = new List<Sqled>
+{
+    provider.SqlProvider.ColumnDefine("Id", "INTEGER", true, false),
+    provider.SqlProvider.ColumnDefine("Name", "TEXT(100)", false, false),
+    provider.SqlProvider.ColumnDefine("Age", "INTEGER", false, true)
+};
+
+var createTableSql = provider.SqlProvider.CreateTable(
+    string.Empty, "Users", columnDefines);
+
+await ExecuteNonQueryAsync(connection, createTableSql);
+```
 
 ## 支持的数据库
 

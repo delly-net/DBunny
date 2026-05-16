@@ -33,22 +33,55 @@ dotnet add package Delly.DBunny.Sqlite
 ## Quick Start
 
 ```csharp
+using Delly.DBunny;
+using Delly.DBunny.Connecting.Extension;
+using Delly.DBunny.Providing;
+using Delly.DBunny.Providing.Extension;
 using Delly.DBunny.Sqlite;
+using Delly.DBunny.Sql.Extension;
+using System.Data.Common;
 
-// Create a SQLite provider
-var provider = new SqliteProvider("Data Source=mydb.db");
+// Define connection settings
+var connectionDefine = new SqliteConnectionDefine()
+    .WithDataSource("Data Source=mydb.db")
+    .WithPooling(false)
+    .WithForeignKeys(true);
+
+// Create connection descriptor
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    SqliteConnectionDefine.DATABASE_TYPE, "Default");
+
+// Create connection factory
+var connectionFactory = new DefaultDbConnectionFactory(connectionDescriptor);
+
+// Create provider factory with SQLite provider
+var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
+
+// Get provider and connection
+var provider = providerFactory.GetProvider(
+    connectionFactory.GetDefaultConnection().DatabaseType)!;
+
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
 
 // Execute a query
-var sql = new Sqled("SELECT * FROM Users WHERE Name = @name");
-sql.Set("name", "John");
+var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
+    .Set("name", "John");
 
-var result = provider.Execute(sql);
+using var command = provider.GetDbCommand(connection);
+command.CommandText = sql.Sql;
+provider.SetParameters(command, sql.Parameters);
 
 // Read data
-foreach (DataRow row in result.Tables[0].Rows)
+await provider.ReadAsync(connection, sql, async reader =>
 {
-    Console.WriteLine($"Id: {row["Id"]}, Name: {row["Name"]}");
-}
+    while (await reader.ReadAsync())
+    {
+        var id = reader["Id"];
+        var name = reader["Name"];
+        Console.WriteLine($"Id: {id}, Name: {name}");
+    }
+});
 ```
 
 ## Core Concepts
@@ -58,12 +91,20 @@ foreach (DataRow row in result.Tables[0].Rows)
 A wrapper class for SQL commands that combines SQL text with parameters:
 
 ```csharp
-var sql = new Sqled("SELECT * FROM Users WHERE Age > @minAge");
-sql.Set("minAge", 18);
+var sql = new Sqled("SELECT * FROM Users WHERE Age > @minAge")
+    .Set("minAge", 18);
 
-// Fluent API
+// Fluent API for building queries
 sql.Append(" AND Status = @status")
     .Set("status", "Active");
+
+// For complex SQL, use Builder directly
+var createTableSql = new Sqled();
+createTableSql.Builder.AppendLine("CREATE TABLE [Users](");
+createTableSql.Builder.Append("    [Id] INTEGER NOT NULL PRIMARY KEY,");
+createTableSql.Builder.Append("    [Name] TEXT(100) NOT NULL,");
+createTableSql.Builder.AppendLine("    [Age] INTEGER NULL");
+createTableSql.Builder.AppendLine(");");
 ```
 
 ### Key Interfaces
@@ -78,6 +119,18 @@ The main database provider interface for:
 - Reading data synchronously or asynchronously
 - Getting database metadata (schemas, tables, columns, indexes)
 
+```csharp
+// Execute non-query (INSERT, UPDATE, DELETE)
+var insertSql = new Sqled("INSERT INTO [Users] (Name, Age) VALUES (@name, @age)")
+    .Set("name", "John Doe")
+    .Set("age", 30);
+
+using var command = provider.GetDbCommand(connection);
+command.CommandText = insertSql.Sql;
+provider.SetParameters(command, insertSql.Parameters);
+await command.ExecuteNonQueryAsync();
+```
+
 #### ISqlProvider
 
 Generates database-specific SQL for:
@@ -87,6 +140,21 @@ Generates database-specific SQL for:
 - Column operations (create, rename, copy, drop)
 - Index operations (create, get)
 - Type conversions between .NET types and database types
+
+```csharp
+// Create a table using SQL provider
+var columnDefines = new List<Sqled>
+{
+    provider.SqlProvider.ColumnDefine("Id", "INTEGER", true, false),
+    provider.SqlProvider.ColumnDefine("Name", "TEXT(100)", false, false),
+    provider.SqlProvider.ColumnDefine("Age", "INTEGER", false, true)
+};
+
+var createTableSql = provider.SqlProvider.CreateTable(
+    string.Empty, "Users", columnDefines);
+
+await ExecuteNonQueryAsync(connection, createTableSql);
+```
 
 ## Supported Databases
 
