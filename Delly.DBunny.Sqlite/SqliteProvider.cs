@@ -129,7 +129,7 @@ namespace Delly.DBunny.Sqlite
                         TableName = table,
                         ColumnName = reader.GetString(reader.GetOrdinal("name")),
                         ColumnType = reader.GetString(reader.GetOrdinal("type")),
-                        NullableFlag = reader.GetBoolean(reader.GetOrdinal("notnull")),
+                        NullableFlag = !reader.GetBoolean(reader.GetOrdinal("notnull")),
                         PrimaryKeyFlag = reader.GetBoolean(reader.GetOrdinal("pk")),
                     });
                 }
