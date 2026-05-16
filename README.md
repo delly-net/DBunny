@@ -92,10 +92,16 @@ Generates database-specific SQL for:
 
 | Database | Provider | Status |
 |----------|----------|--------|
-| SQLite | `Delly.DBunny.Sqlite` | ✓ Stable |
-| MySQL | Coming soon | Planned |
-| PostgreSQL | Coming soon | Planned |
-| SQL Server | Coming soon | Planned |
+| [SQLite](https://www.sqlite.org/) | `Delly.DBunny.Sqlite` | ✅ Stable |
+| [MySQL](https://www.mysql.com/) | Coming soon | Planned |
+| [PostgreSQL](https://www.postgresql.org/) | Coming soon | Planned |
+| [SQL Server](https://www.microsoft.com/sql-server/) | Coming soon | Planned |
+
+## Links
+
+- [Documentation](#) *[待更新]*
+- [Issues](https://github.com/delly-net/DBunny/issues)
+- [Releases](https://github.com/delly-net/DBunny/releases)
 
 ## License
 
@@ -104,12 +110,6 @@ Generates database-specific SQL for:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Links
-
-- [Documentation](#) *[待更新]*
-- [Issues](https://github.com/delly-net/DBunny/issues)
-- [Releases](https://github.com/delly-net/DBunny/releases)
 
 ## Author
 
