@@ -4,12 +4,14 @@ DBunny is a lightweight .NET database abstraction layer that provides a unified 
 
 ## Project Structure
 
-- **Delly.DBunny** - Core library with interfaces and base types
+- **Delly.DBunny.Core** - Core library with interfaces and base types
 - **Delly.DBunny.Sqlite** - SQLite provider implementation
+- **Delly.DBunny.MySql** - MySQL provider implementation
+- **Delly.DBunny.PostgreSql** - PostgreSQL provider implementation
 
 ## Target Frameworks
 
-The project targets multiple .NET frameworks:
+All projects target multiple .NET frameworks:
 - .NET Standard 2.0
 - .NET 5.0
 - .NET 8.0 (AOT compatible)
@@ -72,7 +74,7 @@ sql.Set("name", "John");
 - **DbConnectionDescriptor**: Describes a database connection (Name, DatabaseType, ConnectionString)
 - **DbTableDesciptor**: Describes a database table (SchemaName, TableName)
 - **DbColumnDesciptor**: Extends DbTableDesciptor with column info (ColumnName, ColumnType, PrimaryKeyFlag, NullableFlag)
-- **DbIndexDesciptor**: Describes a database index (TableName, IndexName, UniqueFlag)
+- **DbIndexDesciptor**: Describes a database index (SchemaName, TableName, IndexName, UniqueFlag, ColumnName)
 
 ### Type System
 
@@ -100,28 +102,77 @@ The connection define ([SqliteConnectionDefine](Delly.DBunny.Sqlite/SqliteConnec
   - `FOREIGN_KEYS_KEY`, `FAIL_IF_MISSING_KEY`, `READ_ONLY_KEY`
   - `LEGACY_FORMAT_KEY`, `DATE_TIME_FORMAT_KEY`, `DATE_TIME_KIND_KEY`
 
+## MySQL Implementation
+
+The MySQL provider ([MySqlProvider](Delly.DBunny.MySql/MySqlProvider.cs)) implements IDbProvider with:
+- Uses `MySqlConnector` package
+- Parameters prefixed with `@`
+- Full schema support
+- Uses `SHOW` commands and `information_schema` queries
+
+The SQL provider ([MySqlSqlProvider](Delly.DBunny.MySql/MySqlSqlProvider.cs)) implements ISqlProvider:
+- Names wrapped in backticks `` `name` ``
+- Type mappings: TINYINT, SMALLINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL, DATETIME, VARCHAR, TEXT
+- Supports AUTO_INCREMENT for primary keys
+
+The connection define ([MySqlConnectionDefine](Delly.DBunny.MySql/MySqlConnectionDefine.cs)) provides MySQL-specific connection parameters:
+- Database type constant: `DATABASE_TYPE = "MYSQL"`
+- Connection parameter constants:
+  - `SERVER_KEY`, `PORT_KEY`, `DATABASE_KEY`, `USER_ID_KEY`, `PASSWORD_KEY`
+  - `CHARSET_KEY`, `SSL_MODE_KEY`, `ALLOW_PUBLIC_KEY_RETRIEVAL_KEY`
+  - `CONNECTION_TIMEOUT_KEY`, `DEFAULT_COMMAND_TIMEOUT_KEY`
+  - `POOLING_KEY`, `MIN_POOL_SIZE_KEY`, `MAX_POOL_SIZE_KEY`
+  - `PERSIST_SECURITY_INFO_KEY`, `ALLOW_ZERO_DATE_TIME_KEY`, `CONVERT_ZERO_DATE_TIME_KEY`
+
+## PostgreSQL Implementation
+
+The PostgreSQL provider ([PostgreSqlProvider](Delly.DBunny.PostgreSql/PostgreSqlProvider.cs)) implements IDbProvider with:
+- Uses `Npgsql` package
+- Parameters prefixed with `@`
+- Full schema support
+- Uses `information_schema` queries
+
+The SQL provider ([PostgreSqlSqlProvider](Delly.DBunny.PostgreSql/PostgreSqlSqlProvider.cs)) implements ISqlProvider:
+- Names wrapped in double quotes `"name"`
+- Type mappings: BOOLEAN, SMALLINT, INTEGER, BIGINT, REAL, DOUBLE PRECISION, NUMERIC, TIMESTAMP, VARCHAR, TEXT
+
+The connection define ([PostgreSqlConnectionDefine](Delly.DBunny.PostgreSql/PostgreSqlConnectionDefine.cs)) provides PostgreSQL-specific connection parameters:
+- Database type constant: `DATABASE_TYPE = "POSTGRESQL"`
+- Connection parameter constants:
+  - `HOST_KEY`, `PORT_KEY`, `DATABASE_KEY`, `USERNAME_KEY`, `PASSWORD_KEY`
+  - `SEARCH_PATH_KEY`, `SSL_MODE_KEY`, `TRUST_SERVER_CERTIFICATE_KEY`
+  - `TIMEOUT_KEY`, `COMMAND_TIMEOUT_KEY`
+  - `POOLING_KEY`, `MIN_POOL_SIZE_KEY`, `MAX_POOL_SIZE_KEY`
+  - `KEEPALIVE_KEY`, `KEEPALIVE_IDLE_KEY`, `TIMEZONE_KEY`, `ENCODING_KEY`
+
 ## Extensions
 
 - **SqledExtension**: Fluent methods for building SQL (`Append()`, `Set()`)
 - **DbProviderExtension**: Helper methods for executing queries (`Read()`, `ReadAsync()`)
-- **SqliteConnectionDefineExtension**: Fluent builder methods for SQLite connection:
-  - `WithDataSource()`, `WithPassword()`, `WithPageSize()`, `WithCacheSize()`
-  - `WithDefaultTimeout()`, `WithPooling()`, `WithForeignKeys()`, `WithReadOnly()`
+- **SqliteConnectionDefineExtension**: Fluent builder methods for SQLite connection (WithDataSource, WithPassword, etc.)
+- **MySqlConnectionDefineExtension**: Fluent builder methods for MySQL connection
+- **PostgreSqlConnectionDefineExtension**: Fluent builder methods for PostgreSQL connection
 
 ## Adding a New Database Provider
 
 To add support for a new database:
 
-1. Create a new project (e.g., `Delly.DBunny.Postgres`)
+1. Create a new project (e.g., `Delly.DBunny.YourDb`)
 2. Create a connection define class extending `BaseConnectionDefine`:
    - Define connection parameter constants with `_KEY` suffix
-   - Define database type constant (e.g., `DATABASE_TYPE`)
+   - Define database type constant (e.g., `DATABASE_TYPE = "YOURDB"`)
    - Add properties for connection parameters
    - Optionally add extension methods in `*ConnectionDefineExtension.cs`
-3. Implement `IDbProvider` with database-specific connection/command handling
-4. Implement `ISqlProvider` with database-specific SQL generation
-5. Add any required NuGet packages for the database driver
-6. Target the same frameworks: netstandard2.0;net5.0;net8.0
+3. Implement `IDbProvider` with database-specific connection/command handling:
+   - Use appropriate ADO.NET driver package
+   - Set parameter prefix (usually `@`)
+   - Implement metadata queries (schemas, tables, columns, indexes)
+4. Implement `ISqlProvider` with database-specific SQL generation:
+   - Define name quoting style (square brackets, backticks, double quotes, etc.)
+   - Implement type mappings from .NET TypeCode and DbColumnType
+   - Set `HasSchema` property appropriately
+5. Target the same frameworks: netstandard2.0;net5.0;net8.0
+6. Add project reference to `Delly.DBunny.Core`
 
 ## Conventions
 
@@ -130,6 +181,20 @@ To add support for a new database:
 - Database-specific names are quoted via `GetSpecialName()` in ISqlProvider
 - Parameters are passed as `IEnumerable<KeyValuePair<string, object>>`
 - **Constants** use UPPER_CASE with underscores (e.g., `DATA_SOURCE_KEY`, `DEFAULT_TIMEOUT_KEY`)
+- Database type constants use `DATABASE_TYPE` name
+- Connection parameter constants use `_KEY` suffix
+
+## Database Comparison
+
+| Feature | SQLite | MySQL | PostgreSQL |
+|---------|--------|-------|------------|
+| Schema Support | No | Yes | Yes |
+| Name Quoting | `[name]` | `` `name` `` | `"name"` |
+| Parameter Prefix | `@` | `@` | `@` |
+| Package | System.Data.SQLite | MySqlConnector | Npgsql |
+| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY |
+| Decimal Type | REAL | DECIMAL | NUMERIC |
+| DateTime Type | TEXT | DATETIME | TIMESTAMP |
 
 ## License
 
