@@ -13,16 +13,16 @@ public class PostgreSqlTestFixture : IDisposable
     public IDbProvider Provider { get; }
     public DbConnection Connection { get; }
     public DbConnectionDescriptor ConnectionDescriptor { get; }
-    private readonly string _testDatabaseName = $"testdb_{Guid.NewGuid():N}";
+    private readonly string _testDatabaseName = $"testdb";
 
     public PostgreSqlTestFixture()
     {
         // 使用 PostgreSQL 连接字符串（需要配置实际的连接信息）
         // 默认使用 Testcontainers 或本地 PostgreSQL 实例
-        var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+        var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "192.168.56.103";
         var port = Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "5432";
         var username = Environment.GetEnvironmentVariable("POSTGRES_USER") ?? "postgres";
-        var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "postgres";
+        var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "123456";
         var database = Environment.GetEnvironmentVariable("POSTGRES_DB") ?? "postgres";
 
         // 使用 PostgreSqlConnectionDefine 定义连接
@@ -83,22 +83,22 @@ public class PostgreSqlTestFixture : IDisposable
             Connection?.Close();
             Connection?.Dispose();
 
-            // 删除测试数据库
-            var adminConnectionString = ConnectionDescriptor.ConnectionString.Replace(
-                $"Database={_testDatabaseName}",
-                $"Database=postgres"
-            );
+            //// 删除测试数据库
+            //var adminConnectionString = ConnectionDescriptor.ConnectionString.Replace(
+            //    $"Database={_testDatabaseName}",
+            //    $"Database=postgres"
+            //);
 
-            using var adminConnection = Provider.GetDbConnection(adminConnectionString);
-            adminConnection.Open();
+            //using var adminConnection = Provider.GetDbConnection(adminConnectionString);
+            //adminConnection.Open();
 
-            var dropDbSql = $"DROP DATABASE IF EXISTS \"{_testDatabaseName}\" WITH (FORCE);";
-            using var command = Provider.GetDbCommand(adminConnection);
-            command.CommandText = dropDbSql;
-            command.ExecuteNonQuery();
+            //var dropDbSql = $"DROP DATABASE IF EXISTS \"{_testDatabaseName}\" WITH (FORCE);";
+            //using var command = Provider.GetDbCommand(adminConnection);
+            //command.CommandText = dropDbSql;
+            //command.ExecuteNonQuery();
 
-            adminConnection.Close();
-            adminConnection.Dispose();
+            //adminConnection.Close();
+            //adminConnection.Dispose();
         }
         catch
         {
