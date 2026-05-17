@@ -21,13 +21,13 @@ public class TableTests : IAsyncLifetime
 
     public TableTests()
     {
-        _testDatabaseName = $"testdb_{Guid.NewGuid():N}";
+        _testDatabaseName = $"testdb";
         _testSchema = "test_schema";
 
-        var server = Environment.GetEnvironmentVariable("MYSQL_TEST_SERVER") ?? "localhost";
+        var server = Environment.GetEnvironmentVariable("MYSQL_TEST_SERVER") ?? "192.168.56.103";
         var port = int.Parse(Environment.GetEnvironmentVariable("MYSQL_TEST_PORT") ?? "3306");
         var userId = Environment.GetEnvironmentVariable("MYSQL_TEST_USER_ID") ?? "root";
-        var password = Environment.GetEnvironmentVariable("MYSQL_TEST_PASSWORD") ?? "root";
+        var password = Environment.GetEnvironmentVariable("MYSQL_TEST_PASSWORD") ?? "123456";
 
         // 使用 MySqlConnectionDefine 定义连接
         var connectionDefine = new MySqlConnectionDefine()
@@ -54,9 +54,9 @@ public class TableTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _connection.Open();
-        // 创建测试数据库
-        var createDatabaseSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testDatabaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        await ExecuteNonQueryAsync(_connection, createDatabaseSql);
+        //// 创建测试数据库
+        //var createDatabaseSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testDatabaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        //await ExecuteNonQueryAsync(_connection, createDatabaseSql);
 
         // 创建测试 Schema
         var createSchemaSql = new Sqled($"CREATE SCHEMA IF NOT EXISTS `{_testSchema}`");
@@ -75,9 +75,9 @@ public class TableTests : IAsyncLifetime
             var useMysqlSql = new Sqled("USE `mysql`");
             await ExecuteNonQueryAsync(_connection, useMysqlSql);
 
-            // 删除测试数据库
-            var dropDatabaseSql = new Sqled($"DROP DATABASE IF EXISTS `{_testDatabaseName}`");
-            await ExecuteNonQueryAsync(_connection, dropDatabaseSql);
+            //// 删除测试数据库
+            //var dropDatabaseSql = new Sqled($"DROP DATABASE IF EXISTS `{_testDatabaseName}`");
+            //await ExecuteNonQueryAsync(_connection, dropDatabaseSql);
         }
         catch { }
         finally
@@ -199,7 +199,13 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestItems";
-        await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL, Quantity INT NULL");
+
+        // 判断表是否存在
+        var tables = await _provider.GetTables(_connection, _testSchema);
+        if (!tables.Where(d => d.TableName == tableName).Any())
+        {
+            await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL, Quantity INT NULL");
+        }
 
         // Act
         var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
@@ -244,15 +250,21 @@ public class TableTests : IAsyncLifetime
     public async Task Sqled_WithParameters_ShouldExecuteCorrectly()
     {
         // Arrange
-        await CreateSimpleTableAsync(_testSchema, "TestParams", "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL, Value INT NOT NULL");
+        // 判断表是否存在
+        var tableName = "TestParams";
+        var tables = await _provider.GetTables(_connection, _testSchema);
+        if (!tables.Where(d => d.TableName == tableName).Any())
+        {
+            await CreateSimpleTableAsync(_testSchema, "TestParams", "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL, Value INT NOT NULL");
+        }
 
         // Act
-        var insertSql = new Sqled("INSERT INTO `TestParams` (Name, Value) VALUES (@name, @value)")
+        var insertSql = new Sqled($"INSERT INTO `{_testSchema}`.`TestParams` (Name, Value) VALUES (@name, @value)")
             .Set("name", "TestRecord")
             .Set("value", 42);
         await ExecuteNonQueryAsync(_connection, insertSql);
 
-        var selectSql = new Sqled("SELECT Value FROM `TestParams` WHERE Name = @name").Set("name", "TestRecord");
+        var selectSql = new Sqled($"SELECT Value FROM `{_testSchema}`.`TestParams` WHERE Name = @name").Set("name", "TestRecord");
         var result = await ExecuteScalarAsync<int>(_connection, selectSql);
 
         // Assert

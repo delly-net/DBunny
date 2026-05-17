@@ -137,10 +137,10 @@ namespace Delly.DBunny.MySql
                     {
                         SchemaName = schema,
                         TableName = table,
-                        ColumnName = reader.GetString(reader.GetOrdinal("COLUMN_NAME")),
-                        ColumnType = reader.GetString(reader.GetOrdinal("COLUMN_TYPE")),
-                        NullableFlag = reader.GetString(reader.GetOrdinal("IS_NULLABLE")) == "YES",
-                        PrimaryKeyFlag = reader.GetString(reader.GetOrdinal("COLUMN_KEY")) == "PRI",
+                        ColumnName = reader.GetString(reader.GetOrdinal("Field")),
+                        ColumnType = reader.GetString(reader.GetOrdinal("Type")).ToUpperInvariant(),
+                        NullableFlag = reader.GetString(reader.GetOrdinal("Null")) == "YES",
+                        PrimaryKeyFlag = reader.GetString(reader.GetOrdinal("Key")) == "PRI",
                     });
                 }
             });
