@@ -54,18 +54,6 @@ namespace Delly.DBunny.Oracle
         }
 
         /// <summary>
-        /// 设置默认命令超时时间
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="timeout">超时时间（秒）</param>
-        /// <returns>当前实例</returns>
-        public static OracleConnectionDefine WithCommandTimeout(this OracleConnectionDefine define, int timeout)
-        {
-            define.CommandTimeout = timeout;
-            return define;
-        }
-
-        /// <summary>
         /// 设置连接池
         /// </summary>
         /// <param name="define">连接定义</param>
@@ -98,42 +86,6 @@ namespace Delly.DBunny.Oracle
         public static OracleConnectionDefine WithMaxPoolSize(this OracleConnectionDefine define, int maxPoolSize)
         {
             define.MaxPoolSize = maxPoolSize;
-            return define;
-        }
-
-        /// <summary>
-        /// 设置语句缓存大小
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="cacheSize">语句缓存大小</param>
-        /// <returns>当前实例</returns>
-        public static OracleConnectionDefine WithStatementCacheSize(this OracleConnectionDefine define, int cacheSize)
-        {
-            define.StatementCacheSize = cacheSize;
-            return define;
-        }
-
-        /// <summary>
-        /// 设置语句缓存清除
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="purge">是否清除语句缓存</param>
-        /// <returns>当前实例</returns>
-        public static OracleConnectionDefine WithStatementCachePurge(this OracleConnectionDefine define, bool purge)
-        {
-            define.StatementCachePurge = purge;
-            return define;
-        }
-
-        /// <summary>
-        /// 设置自我调优
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="selfTuning">是否启用自我调优</param>
-        /// <returns>当前实例</returns>
-        public static OracleConnectionDefine WithSelfTuning(this OracleConnectionDefine define, bool selfTuning)
-        {
-            define.SelfTuning = selfTuning;
             return define;
         }
     }

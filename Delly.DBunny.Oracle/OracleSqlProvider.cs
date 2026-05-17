@@ -186,7 +186,7 @@ namespace Delly.DBunny.Oracle
                 }
             }
 
-            return $"CREATE USER {GetSpecialName(schema)} IDENTIFIED BY {password} DEFAULT TABLESPACE {tablespace} TEMPORARY TABLESPACE {tempTablespace}; GRANT CONNECT, RESOURCE TO {GetSpecialName(schema)};";
+            return $"CREATE USER {GetSpecialName(schema)} IDENTIFIED BY {GetSpecialName(password)} DEFAULT TABLESPACE {tablespace} TEMPORARY TABLESPACE {tempTablespace}";
         }
 
         /// <summary>
@@ -210,8 +210,8 @@ namespace Delly.DBunny.Oracle
         /// <returns></returns>
         public Sqled GetTables(string schema)
         {
-            var upperSchema = schema.ToUpper();
-            return $"SELECT table_name FROM all_tables WHERE owner = '{upperSchema}' AND table_name NOT LIKE 'BIN$%' ORDER BY table_name";
+            // Use exact case since schema and table names are quoted in CREATE TABLE
+            return $"SELECT table_name FROM all_tables WHERE owner = '{schema}' AND table_name NOT LIKE 'BIN$%' ORDER BY table_name";
         }
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Delly.DBunny.Oracle
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
             }
-            sql.Builder.AppendLine(");");
+            sql.Builder.AppendLine(")");
             return sql;
         }
 
@@ -278,8 +278,8 @@ namespace Delly.DBunny.Oracle
         /// <returns></returns>
         public Sqled GetColumns(string schema, string table)
         {
-            var upperSchema = schema.ToUpper();
-            var upperTable = table.ToUpper();
+            // Use case-insensitive comparison for owner, exact for table
+            // Owner is case-insensitive, but table name is case-sensitive when quoted
             return $@"
 SELECT
     c.column_name,
@@ -300,15 +300,15 @@ LEFT JOIN (
     JOIN
         all_cons_columns cc ON con.constraint_name = cc.constraint_name
     WHERE
-        con.owner = '{upperSchema}'
-        AND con.table_name = '{upperTable}'
+        UPPER(con.owner) = UPPER('{schema}')
+        AND con.table_name = '{table}'
         AND con.constraint_type = 'P'
 ) pk ON c.table_name = pk.table_name AND c.column_name = pk.column_name
 WHERE
-    c.owner = '{upperSchema}'
-    AND c.table_name = '{upperTable}'
+    UPPER(c.owner) = UPPER('{schema}')
+    AND c.table_name = '{table}'
 ORDER BY
-    c.column_id;";
+    c.column_id";
         }
 
         /// <summary>
@@ -392,11 +392,10 @@ FROM
 JOIN
     all_ind_columns c ON i.index_name = c.index_name AND i.table_owner = c.table_owner
 WHERE
-    i.table_owner = '{upperSchema}'
-    AND i.table_name = '{upperTable}'
+    i.table_name = '{upperTable}'
     AND i.index_name NOT LIKE 'SYS_%'
 ORDER BY
-    i.index_name, c.column_position;";
+    i.index_name, c.column_position";
         }
 
         /// <summary>
@@ -427,7 +426,9 @@ ORDER BY
         /// <returns></returns>
         public Sqled DropIndex(string schema, string table, string column)
         {
-            return $"DROP INDEX {GetSpecialName(schema)}.{table}_{column}_IDX;";
+            // In Oracle, indexes are owned by the user, not by schema prefix
+            // The index name is just {table}_{column}_IDX without schema prefix
+            return $"DROP INDEX {table}_{column}_IDX;";
         }
 
         #endregion

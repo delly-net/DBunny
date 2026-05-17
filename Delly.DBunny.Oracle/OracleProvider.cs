@@ -133,14 +133,19 @@ namespace Delly.DBunny.Oracle
             {
                 while (await reader.ReadAsync())
                 {
+                    var columnName = reader.IsDBNull(reader.GetOrdinal("column_name")) ? string.Empty : reader.GetString(reader.GetOrdinal("column_name"));
+                    var dataType = reader.IsDBNull(reader.GetOrdinal("data_type")) ? string.Empty : reader.GetString(reader.GetOrdinal("data_type"));
+                    var nullable = reader.IsDBNull(reader.GetOrdinal("nullable")) ? "N" : reader.GetString(reader.GetOrdinal("nullable"));
+                    var columnKey = reader.IsDBNull(reader.GetOrdinal("column_key")) ? string.Empty : reader.GetString(reader.GetOrdinal("column_key"));
+
                     columns.Add(new DbColumnDesciptor()
                     {
                         SchemaName = schema,
                         TableName = table,
-                        ColumnName = reader.GetString(reader.GetOrdinal("column_name")),
-                        ColumnType = reader.GetString(reader.GetOrdinal("data_type")),
-                        NullableFlag = reader.GetString(reader.GetOrdinal("nullable")) == "Y",
-                        PrimaryKeyFlag = reader.GetString(reader.GetOrdinal("column_key")) == "PRI",
+                        ColumnName = columnName,
+                        ColumnType = dataType,
+                        NullableFlag = nullable == "Y",
+                        PrimaryKeyFlag = columnKey == "PRI",
                     });
                 }
             });

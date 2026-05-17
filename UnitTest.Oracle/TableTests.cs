@@ -5,6 +5,7 @@ using Delly.DBunny.Providing;
 using Delly.DBunny.Providing.Extension;
 using Delly.DBunny.Sql.Extension;
 using Delly.DBunny.Oracle;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using Xunit;
@@ -33,8 +34,7 @@ public class TableTests : IAsyncLifetime
             .WithPassword(password)
             .WithPooling(true)
             .WithMinPoolSize(0)
-            .WithMaxPoolSize(100)
-            .WithCommandTimeout(600);
+            .WithMaxPoolSize(100);
 
         // 创建连接描述器
         _connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(OracleConnectionDefine.DATABASE_TYPE, "Default");
@@ -290,18 +290,42 @@ public class TableTests : IAsyncLifetime
 
     private async Task CreateSimpleTableAsync(string tableName, string columns)
     {
-        var columnDesciptors = new List<DbColumnDesciptor>
+        // Parse columns and quote column names for Oracle
+        var columnParts = columns.Split(',');
+        var quotedColumns = new List<string>();
+        foreach (var part in columnParts)
         {
-            new DbColumnDesciptor { SchemaName = _testSchema, ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false }
-        };
-        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
-        await ExecuteNonQueryAsync(_connection, createTableSql);
+            var trimmed = part.Trim();
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                // Find the first space or parenthesis to separate column name from type
+                var firstSpace = trimmed.IndexOfAny(new[] { ' ', '(' });
+                if (firstSpace > 0)
+                {
+                    var columnName = trimmed.Substring(0, firstSpace);
+                    var rest = trimmed.Substring(firstSpace);
+                    quotedColumns.Add($"\"{columnName.Trim()}\"{rest}");
+                }
+                else
+                {
+                    quotedColumns.Add($"\"{trimmed}\"");
+                }
+            }
+        }
+
+        var sql = new Sqled();
+        sql.Builder.AppendLine($"CREATE TABLE \"{_testSchema}\".\"{tableName}\"(");
+        sql.Builder.Append($"    {string.Join(", ", quotedColumns)}");
+        sql.Builder.AppendLine();
+        sql.Builder.AppendLine(")");
+        await ExecuteNonQueryAsync(_connection, sql);
     }
 
     private async Task ExecuteNonQueryAsync(DbConnection connection, Sqled sql)
     {
         using var command = _provider.GetDbCommand(connection);
-        command.CommandText = sql.Sql;
+        // Oracle doesn't support semicolons in single command execution
+        command.CommandText = sql.Sql.TrimEnd(';');
         _provider.SetParameters(command, sql.Parameters);
         await command.ExecuteNonQueryAsync();
     }
@@ -309,7 +333,8 @@ public class TableTests : IAsyncLifetime
     private async Task<T> ExecuteScalarAsync<T>(DbConnection connection, Sqled sql)
     {
         using var command = _provider.GetDbCommand(connection);
-        command.CommandText = sql.Sql;
+        // Oracle doesn't support semicolons in single command execution
+        command.CommandText = sql.Sql.TrimEnd(';');
         _provider.SetParameters(command, sql.Parameters);
         var result = await command.ExecuteScalarAsync();
         return result != null && result != DBNull.Value ? (T)Convert.ChangeType(result, typeof(T))! : default!;

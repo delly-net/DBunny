@@ -40,8 +40,7 @@ public class CrudTests : IAsyncLifetime
             .WithPassword(password)
             .WithPooling(true)
             .WithMinPoolSize(0)
-            .WithMaxPoolSize(100)
-            .WithCommandTimeout(600);
+            .WithMaxPoolSize(100);
 
         // 创建连接描述器
         _connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(OracleConnectionDefine.DATABASE_TYPE, "Default");
@@ -552,7 +551,8 @@ public class CrudTests : IAsyncLifetime
     private async Task ExecuteNonQueryAsync(DbConnection connection, Sqled sql)
     {
         using var command = _provider.GetDbCommand(connection);
-        command.CommandText = sql.Sql;
+        // Oracle doesn't support semicolons in single command execution
+        command.CommandText = sql.Sql.TrimEnd(';');
         _provider.SetParameters(command, sql.Parameters);
         await command.ExecuteNonQueryAsync();
     }
@@ -560,7 +560,8 @@ public class CrudTests : IAsyncLifetime
     private async Task<int> ExecuteNonQueryWithResultAsync(DbConnection connection, Sqled sql)
     {
         using var command = _provider.GetDbCommand(connection);
-        command.CommandText = sql.Sql;
+        // Oracle doesn't support semicolons in single command execution
+        command.CommandText = sql.Sql.TrimEnd(';');
         _provider.SetParameters(command, sql.Parameters);
         return await command.ExecuteNonQueryAsync();
     }

@@ -15,15 +15,9 @@ namespace Delly.DBunny.Oracle
         private const string USER_ID_KEY = "User Id";
         private const string PASSWORD_KEY = "Password";
         private const string CONNECTION_TIMEOUT_KEY = "Connection Timeout";
-        private const string COMMAND_TIMEOUT_KEY = "Command Timeout";
         private const string POOLING_KEY = "Pooling";
-        private const string MIN_POOL_SIZE_KEY = "Minimum Pool Size";
-        private const string MAX_POOL_SIZE_KEY = "Maximum Pool Size";
-        private const string STATEMENT_CACHE_SIZE_KEY = "Statement Cache Size";
-        private const string STATEMENT_CACHE_PURGE_KEY = "Statement Cache Purge";
-        private const string SELF_TUNING_KEY = "Self Tuning";
-        private const string INCORPORATE_STRING_RETRIEVAL_KEY = "Incorporate String Retrieval";
-        private const string VALIDATE_CONNECTION_KEY = "Validate Connection";
+        private const string MIN_POOL_SIZE_KEY = "Min Pool Size";
+        private const string MAX_POOL_SIZE_KEY = "Max Pool Size";
 
         /// <summary>
         /// 数据库类型
@@ -54,15 +48,9 @@ namespace Delly.DBunny.Oracle
         private void SetDefaultValues()
         {
             Set(CONNECTION_TIMEOUT_KEY, "30");
-            Set(COMMAND_TIMEOUT_KEY, "600");
             Set(POOLING_KEY, "True");
             Set(MIN_POOL_SIZE_KEY, "0");
             Set(MAX_POOL_SIZE_KEY, "100");
-            Set(STATEMENT_CACHE_SIZE_KEY, "10");
-            Set(STATEMENT_CACHE_PURGE_KEY, "False");
-            Set(SELF_TUNING_KEY, "True");
-            Set(INCORPORATE_STRING_RETRIEVAL_KEY, "True");
-            Set(VALIDATE_CONNECTION_KEY, "False");
         }
 
         /// <summary>
@@ -122,23 +110,6 @@ namespace Delly.DBunny.Oracle
         }
 
         /// <summary>
-        /// 默认命令超时时间（秒）
-        /// </summary>
-#if NETSTANDARD2_0
-        public int CommandTimeout
-#else
-        public int? CommandTimeout
-#endif
-        {
-            get => Get(COMMAND_TIMEOUT_KEY, 600);
-#if NETSTANDARD2_0
-            set => Set(COMMAND_TIMEOUT_KEY, value.ToString());
-#else
-            set => Set(COMMAND_TIMEOUT_KEY, value?.ToString());
-#endif
-        }
-
-        /// <summary>
         /// 是否使用连接池
         /// </summary>
         public bool Pooling
@@ -183,75 +154,6 @@ namespace Delly.DBunny.Oracle
 #else
             set => Set(MAX_POOL_SIZE_KEY, value?.ToString());
 #endif
-        }
-
-        /// <summary>
-        /// 语句缓存大小
-        /// </summary>
-#if NETSTANDARD2_0
-        public int StatementCacheSize
-#else
-        public int? StatementCacheSize
-#endif
-        {
-            get => Get(STATEMENT_CACHE_SIZE_KEY, 10);
-#if NETSTANDARD2_0
-            set => Set(STATEMENT_CACHE_SIZE_KEY, value.ToString());
-#else
-            set => Set(STATEMENT_CACHE_SIZE_KEY, value?.ToString());
-#endif
-        }
-
-        /// <summary>
-        /// 是否在连接释放时清除语句缓存
-        /// </summary>
-        public bool StatementCachePurge
-        {
-            get
-            {
-                var value = Get(STATEMENT_CACHE_PURGE_KEY, "False");
-                return string.Equals(value, "True", StringComparison.OrdinalIgnoreCase);
-            }
-            set => Set(STATEMENT_CACHE_PURGE_KEY, value ? "True" : "False");
-        }
-
-        /// <summary>
-        /// 是否启用自我调优
-        /// </summary>
-        public bool SelfTuning
-        {
-            get
-            {
-                var value = Get(SELF_TUNING_KEY, "True");
-                return string.Equals(value, "True", StringComparison.OrdinalIgnoreCase);
-            }
-            set => Set(SELF_TUNING_KEY, value ? "True" : "False");
-        }
-
-        /// <summary>
-        /// 是否合并字符串检索
-        /// </summary>
-        public bool IncorporateStringRetrieval
-        {
-            get
-            {
-                var value = Get(INCORPORATE_STRING_RETRIEVAL_KEY, "True");
-                return string.Equals(value, "True", StringComparison.OrdinalIgnoreCase);
-            }
-            set => Set(INCORPORATE_STRING_RETRIEVAL_KEY, value ? "True" : "False");
-        }
-
-        /// <summary>
-        /// 是否在获取连接时验证连接
-        /// </summary>
-        public bool ValidateConnection
-        {
-            get
-            {
-                var value = Get(VALIDATE_CONNECTION_KEY, "False");
-                return string.Equals(value, "True", StringComparison.OrdinalIgnoreCase);
-            }
-            set => Set(VALIDATE_CONNECTION_KEY, value ? "True" : "False");
         }
 
         /// <summary>
