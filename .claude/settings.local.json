@@ -12,7 +12,8 @@
       "Bash(dotnet script *)",
       "Bash(csc -nologo test.sql.cs)",
       "Bash(./test.sql.exe)",
-      "Bash(dotnet clean *)"
+      "Bash(dotnet clean *)",
+      "Bash(git checkout *)"
     ]
   }
 }
