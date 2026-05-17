@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
@@ -28,7 +28,7 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="..\README.md">
+		<None Include="README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>

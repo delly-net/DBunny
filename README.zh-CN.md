@@ -16,12 +16,22 @@
 - **AOT 兼容**：支持 .NET 8.0 的 Native AOT 编译
 - **可空引用类型**：.NET 5.0 及更高版本已启用
 
+## 包
+
+| 包名 | 描述 | NuGet |
+|------|------|-------|
+| [Delly.DBunny.Core](Delly.DBunny.Core/) | 核心库，包含接口和基础类型 | - |
+| [Delly.DBunny.Sqlite](Delly.DBunny.Sqlite/) | SQLite 提供者实现 | - |
+| [Delly.DBunny.MySql](Delly.DBunny.MySql/) | MySQL 提供者实现 | - |
+| [Delly.DBunny.PostgreSql](Delly.DBunny.PostgreSql/) | PostgreSQL 提供者实现 | - |
+| [Delly.DBunny.Oracle](Delly.DBunny.Oracle/) | Oracle 提供者实现 | - |
+
 ## 安装
 
 ### 核心包
 
 ```bash
-dotnet add package Delly.DBunny
+dotnet add package Delly.DBunny.Core
 ```
 
 ### SQLite 提供者
@@ -30,9 +40,27 @@ dotnet add package Delly.DBunny
 dotnet add package Delly.DBunny.Sqlite
 ```
 
+### MySQL 提供者
+
+```bash
+dotnet add package Delly.DBunny.MySql
+```
+
+### PostgreSQL 提供者
+
+```bash
+dotnet add package Delly.DBunny.PostgreSql
+```
+
+### Oracle 提供者
+
+```bash
+dotnet add package Delly.DBunny.Oracle
+```
+
 ## 快速开始
 
-### 方式一：简单单数据库模式（推荐用于简单场景）
+### SQLite 示例
 
 ```csharp
 using Delly.DBunny;
@@ -47,9 +75,22 @@ var connectionString = "Data Source=mydb.db;Pooling=False";
 using var connection = provider.GetDbConnection(connectionString);
 connection.Open();
 
+// 创建表
+var columnDescriptors = new List<DbColumnDesciptor>
+{
+    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
+};
+var createTableSql = provider.SqlProvider.CreateTable(string.Empty, "Users", columnDescriptors);
+
+using var createCommand = provider.GetDbCommand(connection);
+createCommand.CommandText = createTableSql.Sql;
+await createCommand.ExecuteNonQueryAsync();
+
 // 执行查询
-var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
-    .Set("name", "John");
+var sql = new Sqled("SELECT * FROM Users WHERE Age > @minAge")
+    .Set("minAge", 18);
 
 using var command = provider.GetDbCommand(connection);
 command.CommandText = sql.Sql;
@@ -67,58 +108,82 @@ await provider.ReadAsync(connection, sql, async reader =>
 });
 ```
 
-### 方式二：多数据库支持模式（推荐用于可扩展场景）
+### MySQL 示例
 
 ```csharp
 using Delly.DBunny;
-using Delly.DBunny.Connecting.Extension;
-using Delly.DBunny.Providing;
-using Delly.DBunny.Providing.Extension;
-using Delly.DBunny.Sqlite;
+using Delly.DBunny.MySql;
 using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
 using System.Data.Common;
 
-// 定义连接设置
-var connectionDefine = new SqliteConnectionDefine()
-    .WithDataSource("Data Source=mydb.db")
-    .WithPooling(false)
-    .WithForeignKeys(true);
+// 使用构建器定义连接
+var connectionDefine = new MySqlConnectionDefine()
+    .WithServer("localhost")
+    .WithPort(3306)
+    .WithDatabase("mydb")
+    .WithUserId("root")
+    .WithPassword("password")
+    .WithCharset("utf8mb4");
 
-// 创建连接描述器
 var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
-    SqliteConnectionDefine.DATABASE_TYPE, "Default");
+    MySqlConnectionDefine.DATABASE_TYPE, "Default");
 
-// 创建连接工厂
-var connectionFactory = new DefaultDbConnectionFactory(connectionDescriptor);
-
-// 创建提供者工厂，使用 SQLite 提供者（可切换为其他提供者）
-var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
-
-// 获取提供者和连接
-var provider = providerFactory.GetProvider(
-    connectionFactory.GetDefaultConnection().DatabaseType)!;
-
+var provider = new MySqlProvider();
 using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
 connection.Open();
 
-// 执行查询
-var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
-    .Set("name", "John");
+// ... 与 SQLite 相同的查询操作
+```
 
-using var command = provider.GetDbCommand(connection);
-command.CommandText = sql.Sql;
-provider.SetParameters(command, sql.Parameters);
+### PostgreSQL 示例
 
-// 读取数据
-await provider.ReadAsync(connection, sql, async reader =>
-{
-    while (await reader.ReadAsync())
-    {
-        var id = reader["Id"];
-        var name = reader["Name"];
-        Console.WriteLine($"Id: {id}, Name: {name}");
-    }
-});
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.PostgreSql;
+using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
+using System.Data.Common;
+
+var connectionDefine = new PostgreSqlConnectionDefine()
+    .WithHost("localhost")
+    .WithPort(5432)
+    .WithDatabase("mydb")
+    .WithUsername("postgres")
+    .WithPassword("password");
+
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    PostgreSqlConnectionDefine.DATABASE_TYPE, "Default");
+
+var provider = new PostgreSqlProvider();
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
+
+// ... 与 SQLite 相同的查询操作
+```
+
+### Oracle 示例
+
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.Oracle;
+using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
+using System.Data.Common;
+
+var connectionDefine = new OracleConnectionDefine()
+    .WithDataSource("localhost:1521/ORCL")
+    .WithUserId("system")
+    .WithPassword("password");
+
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    OracleConnectionDefine.DATABASE_TYPE, "Default");
+
+var provider = new OracleProvider();
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
+
+// ... 与 SQLite 相同的查询操作（注意：Oracle 使用 : 参数前缀）
 ```
 
 ## 核心概念
@@ -152,7 +217,6 @@ createTableSql.Builder.AppendLine(");");
 
 - 创建数据库连接和命令
 - 设置参数
-- 执行查询（返回 DataSet）
 - 同步或异步读取数据
 - 获取数据库元数据（架构、表、列、索引）
 
@@ -172,35 +236,41 @@ await command.ExecuteNonQueryAsync();
 
 生成数据库特定的 SQL 语句，用于：
 
-- 架构操作（创建、获取）
-- 表操作（创建、获取）
-- 列操作（创建、重命名、复制、删除）
-- 索引操作（创建、获取）
+- 数据库操作（创建、获取、删除）
+- 架构操作（创建、获取、删除）
+- 表操作（创建、获取、删除）
+- 列操作（创建、重命名、修改、复制、删除）
+- 索引操作（创建、获取、删除）
 - .NET 类型与数据库类型之间的类型转换
 
 ```csharp
 // 使用 SQL 提供者创建表
-var columnDefines = new List<Sqled>
+var columnDescriptors = new List<DbColumnDesciptor>
 {
-    provider.SqlProvider.ColumnDefine("Id", "INTEGER", true, false),
-    provider.SqlProvider.ColumnDefine("Name", "TEXT(100)", false, false),
-    provider.SqlProvider.ColumnDefine("Age", "INTEGER", false, true)
+    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
 };
 
-var createTableSql = provider.SqlProvider.CreateTable(
-    string.Empty, "Users", columnDefines);
+var createTableSql = provider.SqlProvider.CreateTable(string.Empty, "Users", columnDescriptors);
 
-await ExecuteNonQueryAsync(connection, createTableSql);
+using var command = provider.GetDbCommand(connection);
+command.CommandText = createTableSql.Sql;
+await command.ExecuteNonQueryAsync();
 ```
 
-## 支持的数据库
+## 数据库对比
 
-| 数据库 | 提供者 | 状态 |
-|--------|--------|------|
-| [SQLite](https://www.sqlite.org/) | `Delly.DBunny.Sqlite` | ✅ 稳定 |
-| [MySQL](https://www.mysql.com/) | 即将推出 | 计划中 |
-| [PostgreSQL](https://www.postgresql.org/) | 即将推出 | 计划中 |
-| [SQL Server](https://www.microsoft.com/sql-server/) | 即将推出 | 计划中 |
+| 特性 | SQLite | MySQL | PostgreSQL | Oracle |
+|------|--------|-------|------------|--------|
+| 支持数据库 | 否 | 是 | 是 | 否 |
+| 支持架构 | 否 | 否 | 是 | 是 |
+| 名称引用 | `[name]` | `` `name` `` | `"name"` | `"name"` |
+| 参数前缀 | `@` | `@` | `@` | `:` |
+| 主键 | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY |
+| 十进制类型 | REAL | DECIMAL | NUMERIC | NUMBER |
+| 日期时间类型 | TEXT | DATETIME | TIMESTAMP | TIMESTAMP |
+| 大文本 | TEXT | TEXT | TEXT | CLOB |
 
 ## 相关链接
 

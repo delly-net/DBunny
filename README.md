@@ -16,12 +16,22 @@ A lightweight .NET database abstraction layer that provides a unified API for wo
 - **AOT Compatible**: Ready for Native AOT compilation on .NET 8.0
 - **Null Reference Types**: Enabled for .NET 5.0 and later
 
+## Packages
+
+| Package | Description | NuGet |
+|---------|-------------|-------|
+| [Delly.DBunny.Core](Delly.DBunny.Core/) | Core library with interfaces and base types | - |
+| [Delly.DBunny.Sqlite](Delly.DBunny.Sqlite/) | SQLite provider implementation | - |
+| [Delly.DBunny.MySql](Delly.DBunny.MySql/) | MySQL provider implementation | - |
+| [Delly.DBunny.PostgreSql](Delly.DBunny.PostgreSql/) | PostgreSQL provider implementation | - |
+| [Delly.DBunny.Oracle](Delly.DBunny.Oracle/) | Oracle provider implementation | - |
+
 ## Installation
 
 ### Core Package
 
 ```bash
-dotnet add package Delly.DBunny
+dotnet add package Delly.DBunny.Core
 ```
 
 ### SQLite Provider
@@ -30,9 +40,27 @@ dotnet add package Delly.DBunny
 dotnet add package Delly.DBunny.Sqlite
 ```
 
+### MySQL Provider
+
+```bash
+dotnet add package Delly.DBunny.MySql
+```
+
+### PostgreSQL Provider
+
+```bash
+dotnet add package Delly.DBunny.PostgreSql
+```
+
+### Oracle Provider
+
+```bash
+dotnet add package Delly.DBunny.Oracle
+```
+
 ## Quick Start
 
-### Mode 1: Simple Single Database (Recommended for simple scenarios)
+### SQLite Example
 
 ```csharp
 using Delly.DBunny;
@@ -47,9 +75,22 @@ var connectionString = "Data Source=mydb.db;Pooling=False";
 using var connection = provider.GetDbConnection(connectionString);
 connection.Open();
 
+// Create a table
+var columnDescriptors = new List<DbColumnDesciptor>
+{
+    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
+};
+var createTableSql = provider.SqlProvider.CreateTable(string.Empty, "Users", columnDescriptors);
+
+using var createCommand = provider.GetDbCommand(connection);
+createCommand.CommandText = createTableSql.Sql;
+await createCommand.ExecuteNonQueryAsync();
+
 // Execute a query
-var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
-    .Set("name", "John");
+var sql = new Sqled("SELECT * FROM Users WHERE Age > @minAge")
+    .Set("minAge", 18);
 
 using var command = provider.GetDbCommand(connection);
 command.CommandText = sql.Sql;
@@ -67,58 +108,82 @@ await provider.ReadAsync(connection, sql, async reader =>
 });
 ```
 
-### Mode 2: Multi-Database Support (Recommended for scalability)
+### MySQL Example
 
 ```csharp
 using Delly.DBunny;
-using Delly.DBunny.Connecting.Extension;
-using Delly.DBunny.Providing;
-using Delly.DBunny.Providing.Extension;
-using Delly.DBunny.Sqlite;
+using Delly.DBunny.MySql;
 using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
 using System.Data.Common;
 
-// Define connection settings
-var connectionDefine = new SqliteConnectionDefine()
-    .WithDataSource("Data Source=mydb.db")
-    .WithPooling(false)
-    .WithForeignKeys(true);
+// Define connection using builder
+var connectionDefine = new MySqlConnectionDefine()
+    .WithServer("localhost")
+    .WithPort(3306)
+    .WithDatabase("mydb")
+    .WithUserId("root")
+    .WithPassword("password")
+    .WithCharset("utf8mb4");
 
-// Create connection descriptor
 var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
-    SqliteConnectionDefine.DATABASE_TYPE, "Default");
+    MySqlConnectionDefine.DATABASE_TYPE, "Default");
 
-// Create connection factory
-var connectionFactory = new DefaultDbConnectionFactory(connectionDescriptor);
-
-// Create provider factory with SQLite provider (can swap to other providers)
-var providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
-
-// Get provider and connection
-var provider = providerFactory.GetProvider(
-    connectionFactory.GetDefaultConnection().DatabaseType)!;
-
+var provider = new MySqlProvider();
 using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
 connection.Open();
 
-// Execute a query
-var sql = new Sqled("SELECT * FROM Users WHERE Name = @name")
-    .Set("name", "John");
+// ... same query operations as SQLite
+```
 
-using var command = provider.GetDbCommand(connection);
-command.CommandText = sql.Sql;
-provider.SetParameters(command, sql.Parameters);
+### PostgreSQL Example
 
-// Read data
-await provider.ReadAsync(connection, sql, async reader =>
-{
-    while (await reader.ReadAsync())
-    {
-        var id = reader["Id"];
-        var name = reader["Name"];
-        Console.WriteLine($"Id: {id}, Name: {name}");
-    }
-});
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.PostgreSql;
+using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
+using System.Data.Common;
+
+var connectionDefine = new PostgreSqlConnectionDefine()
+    .WithHost("localhost")
+    .WithPort(5432)
+    .WithDatabase("mydb")
+    .WithUsername("postgres")
+    .WithPassword("password");
+
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    PostgreSqlConnectionDefine.DATABASE_TYPE, "Default");
+
+var provider = new PostgreSqlProvider();
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
+
+// ... same query operations as SQLite
+```
+
+### Oracle Example
+
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.Oracle;
+using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
+using System.Data.Common;
+
+var connectionDefine = new OracleConnectionDefine()
+    .WithDataSource("localhost:1521/ORCL")
+    .WithUserId("system")
+    .WithPassword("password");
+
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    OracleConnectionDefine.DATABASE_TYPE, "Default");
+
+var provider = new OracleProvider();
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
+
+// ... same query operations as SQLite (note: Oracle uses : parameter prefix)
 ```
 
 ## Core Concepts
@@ -152,7 +217,6 @@ The main database provider interface for:
 
 - Creating database connections and commands
 - Setting parameters
-- Executing queries (returns DataSet)
 - Reading data synchronously or asynchronously
 - Getting database metadata (schemas, tables, columns, indexes)
 
@@ -172,35 +236,41 @@ await command.ExecuteNonQueryAsync();
 
 Generates database-specific SQL for:
 
-- Schema operations (create, get)
-- Table operations (create, get)
-- Column operations (create, rename, copy, drop)
-- Index operations (create, get)
+- Database operations (create, get, drop)
+- Schema operations (create, get, drop)
+- Table operations (create, get, drop)
+- Column operations (create, rename, modify, copy, drop)
+- Index operations (create, get, drop)
 - Type conversions between .NET types and database types
 
 ```csharp
 // Create a table using SQL provider
-var columnDefines = new List<Sqled>
+var columnDescriptors = new List<DbColumnDesciptor>
 {
-    provider.SqlProvider.ColumnDefine("Id", "INTEGER", true, false),
-    provider.SqlProvider.ColumnDefine("Name", "TEXT(100)", false, false),
-    provider.SqlProvider.ColumnDefine("Age", "INTEGER", false, true)
+    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
 };
 
-var createTableSql = provider.SqlProvider.CreateTable(
-    string.Empty, "Users", columnDefines);
+var createTableSql = provider.SqlProvider.CreateTable(string.Empty, "Users", columnDescriptors);
 
-await ExecuteNonQueryAsync(connection, createTableSql);
+using var command = provider.GetDbCommand(connection);
+command.CommandText = createTableSql.Sql;
+await command.ExecuteNonQueryAsync();
 ```
 
-## Supported Databases
+## Database Comparison
 
-| Database | Provider | Status |
-|----------|----------|--------|
-| [SQLite](https://www.sqlite.org/) | `Delly.DBunny.Sqlite` | ✅ Stable |
-| [MySQL](https://www.mysql.com/) | Coming soon | Planned |
-| [PostgreSQL](https://www.postgresql.org/) | Coming soon | Planned |
-| [SQL Server](https://www.microsoft.com/sql-server/) | Coming soon | Planned |
+| Feature | SQLite | MySQL | PostgreSQL | Oracle |
+|---------|--------|-------|------------|--------|
+| HasDatabase | No | Yes | Yes | No |
+| HasSchema | No | No | Yes | Yes |
+| Name Quoting | `[name]` | `` `name` `` | `"name"` | `"name"` |
+| Parameter Prefix | `@` | `@` | `@` | `:` |
+| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY |
+| Decimal Type | REAL | DECIMAL | NUMERIC | NUMBER |
+| DateTime Type | TEXT | DATETIME | TIMESTAMP | TIMESTAMP |
+| Large Text | TEXT | TEXT | TEXT | CLOB |
 
 ## Links
 
