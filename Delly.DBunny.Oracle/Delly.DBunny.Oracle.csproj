@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
+		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
+		<Version>2026.5.1</Version>
+		<Authors>Delly.Net</Authors>
+		<Description>Oracle for Delly.DBunny</Description>
+		<PackageIcon>Bunny_128.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+
+	<!-- 仅给支持的框架开启 Nullable -->
+	<PropertyGroup Condition="'$(TargetFramework)'!='netstandard2.0'">
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<!-- 仅对 net8.0 开启 -->
+	<PropertyGroup Condition="'$(TargetFramework)'=='net8.0'">
+		<IsAotCompatible>true</IsAotCompatible>
+		<PublishAotCompilationEnabled>true</PublishAotCompilationEnabled>
+		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.19.180" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Delly.DBunny.Core\Delly.DBunny.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\Document\Logo\Bunny_128.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+</Project>
