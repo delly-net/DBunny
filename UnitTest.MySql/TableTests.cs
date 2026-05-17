@@ -605,4 +605,41 @@ public class TableTests : IAsyncLifetime
         // Act & Assert
         Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.DropSchema("testschema"));
     }
+
+    [Fact]
+    public async Task ModifyColumn_WhenTableExists_ShouldModifyColumnSuccessfully()
+    {
+        // Arrange
+        var tableName = "TestModifyColumn";
+        await CreateSimpleTableAsync(_testSchema, tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Score", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = false });
+
+        var column = new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Score" };
+        var columnTarget = new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Score", ColumnType = "DECIMAL(10,2)", NullableFlag = true };
+
+        // Act
+        var modifyColumnSql = _provider.SqlProvider.ModifyColumn(column, columnTarget);
+        await ExecuteNonQueryAsync(_connection, modifyColumnSql);
+        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+
+        // Assert
+        var scoreColumn = columns.First(c => c.ColumnName == "Score");
+        Assert.Contains("DECIMAL", scoreColumn.ColumnType);
+        Assert.True(scoreColumn.NullableFlag);
+    }
+
+    [Fact]
+    public void SqlProvider_ModifyColumn_ShouldGenerateCorrectSql()
+    {
+        // Arrange
+        var column = new DbColumnDesciptor { SchemaName = "testschema", TableName = "testtable", ColumnName = "testcol" };
+        var columnTarget = new DbColumnDesciptor { ColumnName = "testcol", ColumnType = "VARCHAR(100)", NullableFlag = true };
+
+        // Act
+        var result = _provider.SqlProvider.ModifyColumn(column, columnTarget);
+
+        // Assert
+        Assert.Equal("ALTER TABLE `testschema`.`testtable` MODIFY COLUMN `testcol` VARCHAR(100) NULL;", result.Sql);
+    }
 }

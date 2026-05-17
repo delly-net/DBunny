@@ -488,6 +488,45 @@ public class TableTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task ModifyColumn_WhenTableExists_ShouldModifyColumnSuccessfully()
+    {
+        // Arrange
+        var tableName = "TestModifyColumn";
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Score", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = false });
+
+        var column = new DbColumnDesciptor { SchemaName = "public", TableName = tableName, ColumnName = "Score" };
+        var columnTarget = new DbColumnDesciptor { SchemaName = "public", TableName = tableName, ColumnName = "Score", ColumnType = "NUMERIC(10,2)", NullableFlag = true };
+
+        // Act
+        var modifyColumnSql = _fixture.Provider.SqlProvider.ModifyColumn(column, columnTarget);
+        await ExecuteNonQueryAsync(_fixture.Connection, modifyColumnSql);
+        var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
+
+        // Assert
+        var scoreColumn = columns.First(c => c.ColumnName == "Score");
+        Assert.Contains("numeric", scoreColumn.ColumnType.ToLower());
+        Assert.True(scoreColumn.NullableFlag);
+    }
+
+    [Fact]
+    public void SqlProvider_ModifyColumn_ShouldGenerateCorrectSql()
+    {
+        // Arrange
+        var column = new DbColumnDesciptor { SchemaName = "public", TableName = "testtable", ColumnName = "testcol" };
+        var columnTarget = new DbColumnDesciptor { ColumnName = "testcol", ColumnType = "VARCHAR(100)", NullableFlag = true };
+
+        // Act
+        var result = _fixture.Provider.SqlProvider.ModifyColumn(column, columnTarget);
+
+        // Assert
+        Assert.Contains("ALTER TABLE \"public\".\"testtable\"", result.Sql);
+        Assert.Contains("ALTER COLUMN \"testcol\" TYPE VARCHAR(100)", result.Sql);
+        Assert.Contains("ALTER COLUMN \"testcol\" DROP NOT NULL", result.Sql);
+    }
+
     public void Dispose()
     {
         _fixture?.Dispose();

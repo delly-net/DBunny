@@ -151,6 +151,14 @@ namespace Delly.DBunny
         Sqled RenameColumn(string schema, string table, string column, string columnTarget);
 
         /// <summary>
+        /// 修改列
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        Sqled ModifyColumn(DbColumnDesciptor column, DbColumnDesciptor columnTarget);
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>

@@ -343,6 +343,24 @@ ORDER BY
         }
 
         /// <summary>
+        /// 修改列
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        public Sqled ModifyColumn(DbColumnDesciptor column, DbColumnDesciptor columnTarget)
+        {
+            var schema = column.SchemaName;
+            var table = column.TableName;
+            var columnName = column.ColumnName;
+            var columnType = columnTarget.ColumnType;
+            var nullable = columnTarget.NullableFlag;
+
+            var nullableStr = nullable ? "NULL" : "NOT NULL";
+            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} MODIFY ({GetSpecialName(columnName)} {columnType} {nullableStr});";
+        }
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>

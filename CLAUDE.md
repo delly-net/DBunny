@@ -8,6 +8,7 @@ DBunny is a lightweight .NET database abstraction layer that provides a unified 
 - **Delly.DBunny.Sqlite** - SQLite provider implementation
 - **Delly.DBunny.MySql** - MySQL provider implementation
 - **Delly.DBunny.PostgreSql** - PostgreSQL provider implementation
+- **Delly.DBunny.Oracle** - Oracle provider implementation
 
 ## Target Frameworks
 
@@ -41,10 +42,11 @@ sql.Set("name", "John");
 - Getting database metadata (schemas, tables, columns, indexes)
 
 **ISqlProvider**: Generates database-specific SQL for:
-- Schema operations (create, get)
-- Table operations (create, get)
-- Column operations (create, rename, copy, drop)
-- Index operations (create, get)
+- **Database operations** (get, create, drop) - when `HasDatabase` is true
+- **Schema operations** (get, create, drop) - when `HasSchema` is true
+- **Table operations** (get, create, drop)
+- **Column operations** (get, create, rename, modify, copy, drop)
+- **Index operations** (get, create, drop)
 - Type conversions between .NET types and database types
 
 **IDbConnectionFactory**: Factory for obtaining database connection descriptors by name.
@@ -86,12 +88,13 @@ sql.Set("name", "John");
 The SQLite provider ([SqliteProvider](Delly.DBunny.Sqlite/SqliteProvider.cs)) implements IDbProvider with:
 - Uses `System.Data.SQLite` package
 - Parameters prefixed with `@`
-- No schema support (SQLite doesn't use schemas)
+- No database or schema support (SQLite doesn't use these concepts)
 - Uses `PRAGMA` commands for metadata queries
 
 The SQL provider ([SqliteSqlProvider](Delly.DBunny.Sqlite/SqliteSqlProvider.cs)) implements ISqlProvider:
 - Names wrapped in square brackets `[name]`
 - Type mappings: INTEGER for integral types, REAL for floating-point, TEXT for strings/dates
+- `HasDatabase` = false, `HasSchema` = false
 
 The connection define ([SqliteConnectionDefine](Delly.DBunny.Sqlite/SqliteConnectionDefine.cs)) provides SQLite-specific connection parameters:
 - Database type constant: `DATABASE_TYPE = "SQLITE"`
@@ -107,13 +110,15 @@ The connection define ([SqliteConnectionDefine](Delly.DBunny.Sqlite/SqliteConnec
 The MySQL provider ([MySqlProvider](Delly.DBunny.MySql/MySqlProvider.cs)) implements IDbProvider with:
 - Uses `MySqlConnector` package
 - Parameters prefixed with `@`
-- Full schema support
+- Full database support (MySQL uses databases instead of schemas)
+- No separate schema support
 - Uses `SHOW` commands and `information_schema` queries
 
 The SQL provider ([MySqlSqlProvider](Delly.DBunny.MySql/MySqlSqlProvider.cs)) implements ISqlProvider:
 - Names wrapped in backticks `` `name` ``
 - Type mappings: TINYINT, SMALLINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL, DATETIME, VARCHAR, TEXT
 - Supports AUTO_INCREMENT for primary keys
+- `HasDatabase` = true, `HasSchema` = false
 
 The connection define ([MySqlConnectionDefine](Delly.DBunny.MySql/MySqlConnectionDefine.cs)) provides MySQL-specific connection parameters:
 - Database type constant: `DATABASE_TYPE = "MYSQL"`
@@ -129,12 +134,13 @@ The connection define ([MySqlConnectionDefine](Delly.DBunny.MySql/MySqlConnectio
 The PostgreSQL provider ([PostgreSqlProvider](Delly.DBunny.PostgreSql/PostgreSqlProvider.cs)) implements IDbProvider with:
 - Uses `Npgsql` package
 - Parameters prefixed with `@`
-- Full schema support
+- Full database and schema support
 - Uses `information_schema` queries
 
 The SQL provider ([PostgreSqlSqlProvider](Delly.DBunny.PostgreSql/PostgreSqlSqlProvider.cs)) implements ISqlProvider:
 - Names wrapped in double quotes `"name"`
 - Type mappings: BOOLEAN, SMALLINT, INTEGER, BIGINT, REAL, DOUBLE PRECISION, NUMERIC, TIMESTAMP, VARCHAR, TEXT
+- `HasDatabase` = true, `HasSchema` = true
 
 The connection define ([PostgreSqlConnectionDefine](Delly.DBunny.PostgreSql/PostgreSqlConnectionDefine.cs)) provides PostgreSQL-specific connection parameters:
 - Database type constant: `DATABASE_TYPE = "POSTGRESQL"`
@@ -145,6 +151,26 @@ The connection define ([PostgreSqlConnectionDefine](Delly.DBunny.PostgreSql/Post
   - `POOLING_KEY`, `MIN_POOL_SIZE_KEY`, `MAX_POOL_SIZE_KEY`
   - `KEEPALIVE_KEY`, `KEEPALIVE_IDLE_KEY`, `TIMEZONE_KEY`, `ENCODING_KEY`
 
+## Oracle Implementation
+
+The Oracle provider ([OracleProvider](Delly.DBunny.Oracle/OracleProvider.cs)) implements IDbProvider with:
+- Uses `Oracle.ManagedDataAccess` package
+- Parameters prefixed with `:`
+- Full schema support (no database-level operations at SQL level)
+- Uses `all_*` system views for metadata queries
+
+The SQL provider ([OracleSqlProvider](Delly.DBunny.Oracle/OracleSqlProvider.cs)) implements ISqlProvider:
+- Names wrapped in double quotes `"name"`
+- Type mappings: NUMBER(1), NUMBER(3), NUMBER(5), NUMBER(10), NUMBER(19), BINARY_FLOAT, BINARY_DOUBLE, TIMESTAMP, VARCHAR2, CLOB
+- `HasDatabase` = false, `HasSchema` = true
+- Schema in Oracle = user
+
+The connection define ([OracleConnectionDefine](Delly.DBunny.Oracle/OracleConnectionDefine.cs)) provides Oracle-specific connection parameters:
+- Database type constant: `DATABASE_TYPE = "ORACLE"`
+- Connection parameter constants:
+  - `DATA_SOURCE_KEY`, `USER_ID_KEY`, `PASSWORD_KEY`
+  - `CONNECTION_TIMEOUT_KEY`, `POOLING_KEY`, `MIN_POOL_SIZE_KEY`, `MAX_POOL_SIZE_KEY`
+
 ## Extensions
 
 - **SqledExtension**: Fluent methods for building SQL (`Append()`, `Set()`)
@@ -152,6 +178,7 @@ The connection define ([PostgreSqlConnectionDefine](Delly.DBunny.PostgreSql/Post
 - **SqliteConnectionDefineExtension**: Fluent builder methods for SQLite connection (WithDataSource, WithPassword, etc.)
 - **MySqlConnectionDefineExtension**: Fluent builder methods for MySQL connection
 - **PostgreSqlConnectionDefineExtension**: Fluent builder methods for PostgreSQL connection
+- **OracleConnectionDefineExtension**: Fluent builder methods for Oracle connection (WithDataSource, WithUserId, WithPassword, etc.)
 
 ## Adding a New Database Provider
 
@@ -165,12 +192,13 @@ To add support for a new database:
    - Optionally add extension methods in `*ConnectionDefineExtension.cs`
 3. Implement `IDbProvider` with database-specific connection/command handling:
    - Use appropriate ADO.NET driver package
-   - Set parameter prefix (usually `@`)
+   - Set parameter prefix (usually `@`, Oracle uses `:`)
    - Implement metadata queries (schemas, tables, columns, indexes)
 4. Implement `ISqlProvider` with database-specific SQL generation:
    - Define name quoting style (square brackets, backticks, double quotes, etc.)
    - Implement type mappings from .NET TypeCode and DbColumnType
-   - Set `HasSchema` property appropriately
+   - Set `HasDatabase` and `HasSchema` properties appropriately
+   - Implement all CRUD operations for database/schema/table/column/index
 5. Target the same frameworks: netstandard2.0;net5.0;net8.0
 6. Add project reference to `Delly.DBunny.Core`
 
@@ -186,15 +214,17 @@ To add support for a new database:
 
 ## Database Comparison
 
-| Feature | SQLite | MySQL | PostgreSQL |
-|---------|--------|-------|------------|
-| Schema Support | No | Yes | Yes |
-| Name Quoting | `[name]` | `` `name` `` | `"name"` |
-| Parameter Prefix | `@` | `@` | `@` |
-| Package | System.Data.SQLite | MySqlConnector | Npgsql |
-| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY |
-| Decimal Type | REAL | DECIMAL | NUMERIC |
-| DateTime Type | TEXT | DATETIME | TIMESTAMP |
+| Feature | SQLite | MySQL | PostgreSQL | Oracle |
+|---------|--------|-------|------------|--------|
+| HasDatabase | No | Yes | Yes | No |
+| HasSchema | No | No | Yes | Yes |
+| Name Quoting | `[name]` | `` `name` `` | `"name"` | `"name"` |
+| Parameter Prefix | `@` | `@` | `@` | `:` |
+| Package | System.Data.SQLite | MySqlConnector | Npgsql | Oracle.ManagedDataAccess |
+| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY |
+| Decimal Type | REAL | DECIMAL | NUMERIC | NUMBER |
+| DateTime Type | TEXT | DATETIME | TIMESTAMP | TIMESTAMP |
+| Large Text | TEXT | TEXT | TEXT | CLOB |
 
 ## License
 

@@ -277,6 +277,17 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
+        /// 修改列
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        public Sqled ModifyColumn(DbColumnDesciptor column, DbColumnDesciptor columnTarget)
+        {
+            throw new NotSupportedException("SQLite does not support modifying column types directly. Recreate the table with the new schema instead.");
+        }
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>

@@ -346,6 +346,32 @@ ORDER BY
         }
 
         /// <summary>
+        /// 修改列
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        public Sqled ModifyColumn(DbColumnDesciptor column, DbColumnDesciptor columnTarget)
+        {
+            var schema = column.SchemaName;
+            var table = column.TableName;
+            var columnName = column.ColumnName;
+            var columnType = columnTarget.ColumnType;
+            var nullable = columnTarget.NullableFlag;
+
+            var sql = new Sqled();
+            var schemaName = GetSpecialName(schema);
+            var tableName = GetSpecialName(table);
+            var colName = GetSpecialName(columnName);
+
+            sql.Builder.AppendLine($"ALTER TABLE {schemaName}.{tableName}");
+            sql.Builder.AppendLine($"    ALTER COLUMN {colName} TYPE {columnType},");
+            sql.Builder.AppendLine($"    ALTER COLUMN {colName} {(nullable ? "DROP NOT NULL" : "SET NOT NULL")};");
+
+            return sql;
+        }
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>

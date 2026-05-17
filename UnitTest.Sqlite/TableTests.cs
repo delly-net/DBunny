@@ -445,6 +445,17 @@ public class TableTests : IDisposable
         Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSpecialTypeName(DbColumnType.UNKNOW));
     }
 
+    [Fact]
+    public void SqlProvider_ModifyColumn_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        var column = new DbColumnDesciptor { SchemaName = string.Empty, TableName = "TestTable", ColumnName = "TestColumn" };
+        var columnTarget = new DbColumnDesciptor { ColumnName = "TestColumn", ColumnType = "TEXT(255)", NullableFlag = true };
+
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.ModifyColumn(column, columnTarget));
+    }
+
     private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
         var columnDesciptors = columns.ToList();
