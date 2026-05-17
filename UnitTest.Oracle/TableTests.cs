@@ -20,11 +20,11 @@ public class TableTests : IAsyncLifetime
 
     public TableTests()
     {
-        _testSchema = $"test_{Guid.NewGuid():N}";
+        _testSchema = $"TESTDB";
 
-        var dataSource = Environment.GetEnvironmentVariable("ORACLE_TEST_DATA_SOURCE") ?? "localhost:1521/xe";
+        var dataSource = Environment.GetEnvironmentVariable("ORACLE_TEST_DATA_SOURCE") ?? "192.168.56.103:1521/FREE";
         var userId = Environment.GetEnvironmentVariable("ORACLE_TEST_USER_ID") ?? "system";
-        var password = Environment.GetEnvironmentVariable("ORACLE_TEST_PASSWORD") ?? "oracle";
+        var password = Environment.GetEnvironmentVariable("ORACLE_TEST_PASSWORD") ?? "Oracle123";
 
         // 使用 OracleConnectionDefine 定义连接
         var connectionDefine = new OracleConnectionDefine()

@@ -11,6 +11,7 @@ using Xunit;
 
 namespace UnitTest.MySql;
 
+[Collection("MySqlTests")]
 public class CrudTests : IAsyncLifetime
 {
     private readonly IDbProvider _provider;
@@ -33,7 +34,7 @@ public class CrudTests : IAsyncLifetime
         var connectionDefine = new MySqlConnectionDefine()
             .WithServer(server)
             .WithPort(port)
-            .WithDatabase(_testSchema)
+            .WithDatabase(_testDatabaseName)
             .WithUserId(userId)
             .WithPassword(password)
             .WithCharset("utf8mb4")
@@ -61,13 +62,13 @@ public class CrudTests : IAsyncLifetime
         //var createDatabaseSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testDatabaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         //await ExecuteNonQueryAsync(_connection, createDatabaseSql);
 
-        // 创建测试 Schema
-        var createSchemaSql = new Sqled($"CREATE SCHEMA IF NOT EXISTS `{_testSchema}`");
+        // 创建测试 Schema (MySQL中schema就是database)
+        var createSchemaSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testSchema}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         await ExecuteNonQueryAsync(_connection, createSchemaSql);
 
         // 切换到测试数据库
-        //var useDatabaseSql = new Sqled($"USE `{_testDatabaseName}`");
-        //await ExecuteNonQueryAsync(_connection, useDatabaseSql);
+        var useSchemaSql = new Sqled($"USE `{_testSchema}`");
+        await ExecuteNonQueryAsync(_connection, useSchemaSql);
 
         await CreateUsersTableAsync();
     }
@@ -96,7 +97,7 @@ public class CrudTests : IAsyncLifetime
     public async Task Insert_ShouldInsertRecordSuccessfully()
     {
         // Arrange
-        var insertSql = new Sqled("INSERT INTO `Users` (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+        var insertSql = new Sqled($"INSERT INTO `Users` (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
             .Set("name", "John Doe")
             .Set("email", "john@example.com")
             .Set("age", 30)
@@ -131,7 +132,7 @@ public class CrudTests : IAsyncLifetime
         await InsertUserAsync("Jane Smith", "jane@example.com", 27);
 
         // Act
-        var selectSql = new Sqled("SELECT Name, Email, Age FROM `Users` WHERE Name = @name")
+        var selectSql = new Sqled($"SELECT Name, Email, Age FROM `Users` WHERE Name = @name")
             .Set("name", "Jane Smith");
         var result = await ReadSingleAsync<UserRecord>(_connection, selectSql);
 
@@ -151,7 +152,7 @@ public class CrudTests : IAsyncLifetime
         await InsertUserAsync("User3", "user3@example.com", 40);
 
         // Act
-        var selectSql = new Sqled("SELECT Name, Email, Age FROM `Users` ORDER BY Age");
+        var selectSql = new Sqled($"SELECT Name, Email, Age FROM `Users` ORDER BY Age");
         var results = await ReadMultipleAsync<UserRecord>(_connection, selectSql);
 
         // Assert
@@ -171,13 +172,13 @@ public class CrudTests : IAsyncLifetime
         await InsertUserAsync("UpdateMe", "old@example.com", 25);
 
         // Act
-        var updateSql = new Sqled("UPDATE `Users` SET Email = @newEmail, Age = @newAge WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE `Users` SET Email = @newEmail, Age = @newAge WHERE Name = @name")
             .Set("newEmail", "new@example.com")
             .Set("newAge", 30)
             .Set("name", "UpdateMe");
         await ExecuteNonQueryAsync(_connection, updateSql);
 
-        var selectSql = new Sqled("SELECT Email, Age FROM `Users` WHERE Name = @name").Set("name", "UpdateMe");
+        var selectSql = new Sqled($"SELECT Email, Age FROM `Users` WHERE Name = @name").Set("name", "UpdateMe");
         var result = await ReadSingleAsync<UserRecord>(_connection, selectSql);
 
         // Assert
@@ -195,14 +196,14 @@ public class CrudTests : IAsyncLifetime
 
         // Act
         var updateDateTime = new DateTime(2024, 12, 31, 23, 59, 59);
-        var updateSql = new Sqled("UPDATE `Users` SET Email = @email, Age = @age, CreatedAt = @createdAt WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE `Users` SET Email = @email, Age = @age, CreatedAt = @createdAt WHERE Name = @name")
             .Set("email", "updated@example.com")
             .Set("age", 35)
             .Set("createdAt", updateDateTime)
             .Set("name", "MultiUpdate");
         await ExecuteNonQueryAsync(_connection, updateSql);
 
-        var selectSql = new Sqled("SELECT Email, Age FROM `Users` WHERE Name = @name").Set("name", "MultiUpdate");
+        var selectSql = new Sqled($"SELECT Email, Age FROM `Users` WHERE Name = @name").Set("name", "MultiUpdate");
         var result = await ReadSingleAsync<UserRecord>(_connection, selectSql);
 
         // Assert
@@ -218,12 +219,12 @@ public class CrudTests : IAsyncLifetime
         await InsertUserAsync("ExistingUser", "existing@example.com", 30);
 
         // Act
-        var updateSql = new Sqled("UPDATE `Users` SET Email = @email WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE `Users` SET Email = @email WHERE Name = @name")
             .Set("email", "new@example.com")
             .Set("name", "NonExistingUser");
         var affectedRows = await ExecuteNonQueryWithResultAsync(_connection, updateSql);
 
-        var selectSql = new Sqled("SELECT Email FROM `Users` WHERE Name = @name").Set("name", "ExistingUser");
+        var selectSql = new Sqled($"SELECT Email FROM `Users` WHERE Name = @name").Set("name", "ExistingUser");
         var result = await ReadSingleAsync<UserRecord>(_connection, selectSql);
 
         // Assert
@@ -240,7 +241,7 @@ public class CrudTests : IAsyncLifetime
         var countBefore = await GetRecordCountAsync("Users");
 
         // Act
-        var deleteSql = new Sqled("DELETE FROM `Users` WHERE Name = @name").Set("name", "ToDelete");
+        var deleteSql = new Sqled($"DELETE FROM `Users` WHERE Name = @name").Set("name", "ToDelete");
         await ExecuteNonQueryAsync(_connection, deleteSql);
         var countAfter = await GetRecordCountAsync("Users");
 
@@ -257,10 +258,10 @@ public class CrudTests : IAsyncLifetime
         await InsertUserAsync("UserC", "c@example.com", 40);
 
         // Act
-        var deleteSql = new Sqled("DELETE FROM `Users` WHERE Age >= @minAge").Set("minAge", 30);
+        var deleteSql = new Sqled($"DELETE FROM `Users` WHERE Age >= @minAge").Set("minAge", 30);
         await ExecuteNonQueryAsync(_connection, deleteSql);
         var remainingRecords = await ReadMultipleAsync<UserRecord>(_connection,
-            new Sqled("SELECT Name, Age FROM `Users` ORDER BY Name"));
+            new Sqled($"SELECT Name, Age FROM `Users` ORDER BY Name"));
 
         // Assert
         Assert.Single(remainingRecords);
@@ -276,7 +277,7 @@ public class CrudTests : IAsyncLifetime
         var countBefore = await GetRecordCountAsync("Users");
 
         // Act
-        var deleteSql = new Sqled("DELETE FROM `Users` WHERE Name = @name").Set("name", "NonExisting");
+        var deleteSql = new Sqled($"DELETE FROM `Users` WHERE Name = @name").Set("name", "NonExisting");
         var affectedRows = await ExecuteNonQueryWithResultAsync(_connection, deleteSql);
         var countAfter = await GetRecordCountAsync("Users");
 
@@ -300,23 +301,23 @@ public class CrudTests : IAsyncLifetime
 
         // Read
         var readResult = await ReadSingleAsync<UserRecord>(_connection,
-            new Sqled("SELECT Name, Email, Age FROM `Users` WHERE Name = @name").Set("name", "WorkflowUser"));
+            new Sqled($"SELECT Name, Email, Age FROM `Users` WHERE Name = @name").Set("name", "WorkflowUser"));
         Assert.NotNull(readResult);
         Assert.Equal("workflow@example.com", readResult.Email);
         Assert.Equal(28, readResult.Age);
 
         // Update
-        var updateSql = new Sqled("UPDATE `Users` SET Age = @newAge WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE `Users` SET Age = @newAge WHERE Name = @name")
             .Set("newAge", 35)
             .Set("name", "WorkflowUser");
         await ExecuteNonQueryAsync(_connection, updateSql);
         var updatedResult = await ReadSingleAsync<UserRecord>(_connection,
-            new Sqled("SELECT Age FROM `Users` WHERE Name = @name").Set("name", "WorkflowUser"));
+            new Sqled($"SELECT Age FROM `Users` WHERE Name = @name").Set("name", "WorkflowUser"));
         Assert.NotNull(updatedResult);
         Assert.Equal(35, updatedResult.Age);
 
         // Delete
-        var deleteSql = new Sqled("DELETE FROM `Users` WHERE Name = @name").Set("name", "WorkflowUser");
+        var deleteSql = new Sqled($"DELETE FROM `Users` WHERE Name = @name").Set("name", "WorkflowUser");
         await ExecuteNonQueryAsync(_connection, deleteSql);
         var finalCount = await GetRecordCountAsync("Users");
         Assert.Equal(0, finalCount);
@@ -332,7 +333,7 @@ public class CrudTests : IAsyncLifetime
         // Act
         await InsertUserAsync(specialName, specialEmail, 45);
         var result = await ReadSingleAsync<UserRecord>(_connection,
-            new Sqled("SELECT Name, Email FROM `Users` WHERE Name = @name").Set("name", specialName));
+            new Sqled($"SELECT Name, Email FROM `Users` WHERE Name = @name").Set("name", specialName));
 
         // Assert
         Assert.NotNull(result);
@@ -345,14 +346,14 @@ public class CrudTests : IAsyncLifetime
     {
         // Arrange
         // Act
-        var insertSql = new Sqled("INSERT INTO `Users` (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+        var insertSql = new Sqled($"INSERT INTO `Users` (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
             .Set("name", "NullAgeUser")
             .Set("email", "nullage@example.com")
             .Set("age", DBNull.Value)
             .Set("createdAt", DateTime.Now);
         await ExecuteNonQueryAsync(_connection, insertSql);
 
-        var selectSql = new Sqled("SELECT Age FROM `Users` WHERE Name = @name").Set("name", "NullAgeUser");
+        var selectSql = new Sqled($"SELECT Age FROM `Users` WHERE Name = @name").Set("name", "NullAgeUser");
         var result = await ExecuteScalarAsync<object?>(_connection, selectSql);
 
         // Assert
@@ -367,7 +368,7 @@ public class CrudTests : IAsyncLifetime
 
         // Act
         await InsertUserAsync("DateTimeUser", "datetime@example.com", 30, testDateTime);
-        var selectSql = new Sqled("SELECT CreatedAt FROM `Users` WHERE Name = @name").Set("name", "DateTimeUser");
+        var selectSql = new Sqled($"SELECT CreatedAt FROM `Users` WHERE Name = @name").Set("name", "DateTimeUser");
         var result = await ExecuteScalarAsync<DateTime>(_connection, selectSql);
 
         // Assert
@@ -395,7 +396,7 @@ public class CrudTests : IAsyncLifetime
         // Act
         await InsertUserAsync(longName, longEmail, 50);
         var result = await ReadSingleAsync<UserRecord>(_connection,
-            new Sqled("SELECT Name, Email FROM `Users` WHERE Name = @name").Set("name", longName));
+            new Sqled($"SELECT Name, Email FROM `Users` WHERE Name = @name").Set("name", longName));
 
         // Assert
         Assert.NotNull(result);
@@ -482,6 +483,9 @@ public class CrudTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestColumnTypes";
+        var dropSql = new Sqled($"DROP TABLE IF EXISTS `{tableName}`");
+        await ExecuteNonQueryAsync(_connection, dropSql);
+
         var columnDesciptors = new List<DbColumnDesciptor>
         {
             new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
@@ -511,15 +515,12 @@ public class CrudTests : IAsyncLifetime
 
     private async Task CreateUsersTableAsync()
     {
-        // 判断表是否存在
         var tableName = "Users";
-        var tables = await _provider.GetTables(_connection, _testSchema);
-        if (tables.Where(d => d.TableName == tableName).Any())
-        {
-            return;
-        }
+        var dropSql = new Sqled($"DROP TABLE IF EXISTS `{tableName}`");
+        await ExecuteNonQueryAsync(_connection, dropSql);
+
         var sql = new Sqled();
-        sql.Builder.AppendLine($"CREATE TABLE `{_testSchema}`.`{tableName}`(");
+        sql.Builder.AppendLine($"CREATE TABLE `{tableName}`(");
         sql.Builder.Append("    `Id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,");
         sql.Builder.Append("    `Name` VARCHAR(100) NOT NULL,");
         sql.Builder.Append("    `Email` VARCHAR(255) NOT NULL,");
@@ -531,13 +532,13 @@ public class CrudTests : IAsyncLifetime
 
     private async Task TruncateUsersTableAsync()
     {
-        var sql = new Sqled($"TRUNCATE TABLE `{_testSchema}`.`Users`");
+        var sql = new Sqled($"TRUNCATE TABLE `Users`");
         await ExecuteNonQueryAsync(_connection, sql);
     }
 
     private async Task InsertUserAsync(string name, string email, int? age, DateTime? createdAt = null, DbTransaction? transaction = null)
     {
-        var insertSql = new Sqled($"INSERT INTO `{_testSchema}`.`Users` (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+        var insertSql = new Sqled($"INSERT INTO `Users` (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
             .Set("name", name)
             .Set("email", email)
             .Set("age", age.HasValue ? age.Value : DBNull.Value)
@@ -547,7 +548,7 @@ public class CrudTests : IAsyncLifetime
 
     private async Task<int> GetRecordCountAsync(string tableName)
     {
-        var sql = new Sqled($"SELECT COUNT(*) FROM `{_testSchema}`.`{tableName}`");
+        var sql = new Sqled($"SELECT COUNT(*) FROM `{tableName}`");
         return await ExecuteScalarAsync<int>(_connection, sql);
     }
 
@@ -596,8 +597,25 @@ public class CrudTests : IAsyncLifetime
                 var properties = typeof(T).GetProperties();
                 foreach (var prop in properties)
                 {
-                    var ordinal = reader.GetOrdinal(prop.Name);
-                    if (!reader.IsDBNull(ordinal))
+                    int ordinal;
+                    try
+                    {
+                        ordinal = reader.GetOrdinal(prop.Name);
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        // Try case-insensitive lookup
+                        ordinal = -1;
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            if (string.Equals(reader.GetName(i), prop.Name, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ordinal = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (ordinal >= 0 && !reader.IsDBNull(ordinal))
                     {
                         var value = reader[ordinal];
                         prop.SetValue(item, value is DBNull ? null : value);
@@ -611,7 +629,9 @@ public class CrudTests : IAsyncLifetime
 
     private async Task CreateSimpleTableAsync(string schema, string tableName, string columns)
     {
-        var sql = $"CREATE TABLE `{schema}`.`{tableName}`({columns});";
+        var dropSql = $"DROP TABLE IF EXISTS `{tableName}`;";
+        await ExecuteNonQueryAsync(_connection, dropSql);
+        var sql = $"CREATE TABLE `{tableName}`({columns});";
         await ExecuteNonQueryAsync(_connection, sql);
     }
 

@@ -8,9 +8,11 @@ using Delly.DBunny.MySql;
 using System.Data.Common;
 using System.Linq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace UnitTest.MySql;
 
+[Collection("MySqlTests")]
 public class TableTests : IAsyncLifetime
 {
     private readonly IDbProvider _provider;
@@ -54,17 +56,13 @@ public class TableTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _connection.Open();
-        //// 创建测试数据库
-        //var createDatabaseSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testDatabaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        //await ExecuteNonQueryAsync(_connection, createDatabaseSql);
-
-        // 创建测试 Schema
-        var createSchemaSql = new Sqled($"CREATE SCHEMA IF NOT EXISTS `{_testSchema}`");
+        // 创建测试数据库 (MySQL中schema就是database)
+        var createSchemaSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testSchema}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         await ExecuteNonQueryAsync(_connection, createSchemaSql);
 
         // 切换到测试数据库
-        var useDatabaseSql = new Sqled($"USE `{_testDatabaseName}`");
-        await ExecuteNonQueryAsync(_connection, useDatabaseSql);
+        var useSchemaSql = new Sqled($"USE `{_testSchema}`");
+        await ExecuteNonQueryAsync(_connection, useSchemaSql);
     }
 
     public async Task DisposeAsync()
@@ -91,23 +89,32 @@ public class TableTests : IAsyncLifetime
     public async Task CreateSchema_ShouldCreateSchemaSuccessfully()
     {
         // Arrange
-        var schemaName = "new_test_schema";
+        var schemaName = $"new_test_schema_{Guid.NewGuid():N}";
 
-        // Act
-        var createSchemaSql = _provider.SqlProvider.CreateSchema(schemaName);
-        await ExecuteNonQueryAsync(_connection, createSchemaSql);
+        try
+        {
+            // Act
+            var createSchemaSql = _provider.SqlProvider.CreateSchema(schemaName);
+            await ExecuteNonQueryAsync(_connection, createSchemaSql);
 
-        var schemas = await _provider.GetSchemas(_connection);
+            var schemas = await _provider.GetSchemas(_connection);
 
-        // Assert
-        Assert.Contains(schemas, s => s == schemaName);
+            // Assert
+            Assert.Contains(schemas, s => s == schemaName);
+        }
+        finally
+        {
+            // Cleanup
+            var dropSchemaSql = new Sqled($"DROP DATABASE IF EXISTS `{schemaName}`");
+            await ExecuteNonQueryAsync(_connection, dropSchemaSql);
+        }
     }
 
     [Fact]
     public async Task CreateTable_WithMultipleColumns_ShouldCreateTableSuccessfully()
     {
         // Arrange
-        var tableName = "TestUsers";
+        var tableName = $"TestUsers_{Guid.NewGuid():N}";
         var columnDesciptors = new List<DbColumnDesciptor>
         {
             new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
@@ -119,12 +126,21 @@ public class TableTests : IAsyncLifetime
 
         var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
 
-        // Act
-        await ExecuteNonQueryAsync(_connection, createTableSql);
-        var tables = await _provider.GetTables(_connection, _testSchema);
+        try
+        {
+            // Act
+            await ExecuteNonQueryAsync(_connection, createTableSql);
+            var tables = await _provider.GetTables(_connection, _testSchema);
 
-        // Assert
-        Assert.Contains(tables, t => t.TableName == tableName && t.SchemaName == _testSchema);
+            // Assert
+            Assert.Contains(tables, t => t.TableName == tableName && t.SchemaName == _testSchema);
+        }
+        finally
+        {
+            // Cleanup
+            var dropTableSql = new Sqled($"DROP TABLE IF EXISTS `{tableName}`");
+            await ExecuteNonQueryAsync(_connection, dropTableSql);
+        }
     }
 
     [Fact]
@@ -259,12 +275,12 @@ public class TableTests : IAsyncLifetime
         }
 
         // Act
-        var insertSql = new Sqled($"INSERT INTO `{_testSchema}`.`TestParams` (Name, Value) VALUES (@name, @value)")
+        var insertSql = new Sqled($"INSERT INTO `TestParams` (Name, Value) VALUES (@name, @value)")
             .Set("name", "TestRecord")
             .Set("value", 42);
         await ExecuteNonQueryAsync(_connection, insertSql);
 
-        var selectSql = new Sqled($"SELECT Value FROM `{_testSchema}`.`TestParams` WHERE Name = @name").Set("name", "TestRecord");
+        var selectSql = new Sqled($"SELECT Value FROM `TestParams` WHERE Name = @name").Set("name", "TestRecord");
         var result = await ExecuteScalarAsync<int>(_connection, selectSql);
 
         // Assert
@@ -290,15 +306,19 @@ public class TableTests : IAsyncLifetime
         await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, OriginalValue INT NOT NULL");
 
         // 插入测试数据
-        var insertSql = new Sqled("INSERT INTO `TestCopy` (OriginalValue) VALUES (@value)")
+        var insertSql = new Sqled($"INSERT INTO `{tableName}` (OriginalValue) VALUES (@value)")
             .Set("value", 100);
         await ExecuteNonQueryAsync(_connection, insertSql);
 
-        // Act
-        var copyColumnSql = _provider.SqlProvider.CopyColumn(_testSchema, tableName, "OriginalValue", "CopiedValue", "INT");
+        // Act - 先添加列
+        var addColumnSql = $"ALTER TABLE `{tableName}` ADD COLUMN `CopiedValue` INT;";
+        await ExecuteNonQueryAsync(_connection, addColumnSql);
+
+        // 然后复制数据
+        var copyColumnSql = _provider.SqlProvider.CopyColumn(_testSchema, tableName, "OriginalValue", "CopiedValue", "SIGNED");
         await ExecuteNonQueryAsync(_connection, copyColumnSql);
 
-        var selectSql = new Sqled("SELECT OriginalValue, CopiedValue FROM `TestCopy` WHERE Id = @id")
+        var selectSql = new Sqled($"SELECT OriginalValue, CopiedValue FROM `{tableName}` WHERE Id = @id")
             .Set("id", 1);
         var result = await ReadSingleAsync(_connection, selectSql);
 
@@ -327,7 +347,9 @@ public class TableTests : IAsyncLifetime
 
     private async Task CreateSimpleTableAsync(string schema, string tableName, string columns)
     {
-        var sql = $"CREATE TABLE `{schema}`.`{tableName}`({columns});";
+        var dropSql = $"DROP TABLE IF EXISTS `{tableName}`;";
+        await ExecuteNonQueryAsync(_connection, dropSql);
+        var sql = $"CREATE TABLE `{tableName}`({columns});";
         await ExecuteNonQueryAsync(_connection, sql);
     }
 

@@ -162,7 +162,7 @@ namespace Delly.DBunny.MySql
             {
                 while (await reader.ReadAsync())
                 {
-                    var indexName = reader.GetString(reader.GetOrdinal("INDEX_NAME"));
+                    var indexName = reader.GetString(reader.GetOrdinal("Key_name"));
                     // Skip PRIMARY key index
                     if (indexName != "PRIMARY")
                     {
@@ -171,8 +171,8 @@ namespace Delly.DBunny.MySql
                             SchemaName = schema,
                             TableName = table,
                             IndexName = indexName,
-                            UniqueFlag = reader.GetBoolean(reader.GetOrdinal("NON_UNIQUE")) == false,
-                            ColumnName = reader.GetString(reader.GetOrdinal("COLUMN_NAME")),
+                            UniqueFlag = reader.GetBoolean(reader.GetOrdinal("Non_unique")) == false,
+                            ColumnName = reader.GetString(reader.GetOrdinal("Column_name")),
                         });
                     }
                 }

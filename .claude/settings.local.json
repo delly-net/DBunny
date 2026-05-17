@@ -4,7 +4,15 @@
       "Bash(dotnet build *)",
       "Bash(dotnet test *)",
       "Bash(dotnet nuget *)",
-      "Bash(dotnet sln *)"
+      "Bash(dotnet sln *)",
+      "Bash(dotnet run *)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(cd /tmp)",
+      "Bash(cat)",
+      "Bash(dotnet script *)",
+      "Bash(csc -nologo test.sql.cs)",
+      "Bash(./test.sql.exe)",
+      "Bash(dotnet clean *)"
     ]
   }
 }
