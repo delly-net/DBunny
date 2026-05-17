@@ -28,7 +28,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Delly.DBunny\Delly.DBunny.csproj" />
+		<ProjectReference Include="..\Delly.DBunny.Core\Delly.DBunny.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
