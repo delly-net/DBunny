@@ -94,7 +94,7 @@ public class TableTests : IAsyncLifetime
         try
         {
             // Act
-            var createSchemaSql = _provider.SqlProvider.CreateSchema(schemaName);
+            var createSchemaSql = _provider.SqlProvider.CreateSchema(schemaName, null);
             await ExecuteNonQueryAsync(_connection, createSchemaSql);
 
             var schemas = await _provider.GetSchemas(_connection);

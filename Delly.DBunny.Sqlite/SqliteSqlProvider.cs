@@ -1,4 +1,4 @@
-﻿using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Sql.Extension;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,7 +11,12 @@ namespace Delly.DBunny.Sqlite
     public class SqliteSqlProvider : ISqlProvider
     {
         /// <summary>
-        /// 是否有 Schema
+        /// 是否有 数据库 层
+        /// </summary>
+        public bool HasDatabase => false;
+
+        /// <summary>
+        /// 是否有 Schema 层
         /// </summary>
         public bool HasSchema => false;
 
@@ -94,26 +99,75 @@ namespace Delly.DBunny.Sqlite
             }
         }
 
+        #region 数据库
+
+        /// <summary>
+        /// 获取所有 数据库
+        /// </summary>
+        /// <returns></returns>
+        public Sqled GetDatabases()
+        {
+            throw new NotSupportedException("SQLite does not support multiple databases. HasDatabase is false.");
+        }
+
+        /// <summary>
+        /// 创建 数据库
+        /// </summary>
+        /// <param name="database"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public Sqled CreateDatabase(string database, IDictionary<string, object> options)
+        {
+            throw new NotSupportedException("SQLite creates databases by opening a connection to a file, not via SQL commands. HasDatabase is false.");
+        }
+
+        /// <summary>
+        /// 删除 数据库
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
+        public Sqled DropDatabase(string database)
+        {
+            throw new NotSupportedException("SQLite does not support dropping databases. HasDatabase is false.");
+        }
+
+        #endregion
+
+        #region Schema
+
         /// <summary>
         /// 获取所有 Schema
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public Sqled GetSchemas()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("SQLite does not support schemas. HasSchema is false.");
         }
 
         /// <summary>
         /// 创建 Schema
         /// </summary>
         /// <param name="schema"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Sqled CreateSchema(string schema)
+        public Sqled CreateSchema(string schema, IDictionary<string, object> options)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("SQLite does not support schemas. HasSchema is false.");
         }
+
+        /// <summary>
+        /// 删除 Schema
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <returns></returns>
+        public Sqled DropSchema(string schema)
+        {
+            throw new NotSupportedException("SQLite does not support schemas. HasSchema is false.");
+        }
+
+        #endregion
+
+        #region 数据表
 
         /// <summary>
         /// 获取所有表
@@ -126,14 +180,14 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
-        /// 列定义
+        /// 获取创建表时的字段定义
         /// </summary>
         /// <param name="column"></param>
         /// <param name="columnType"></param>
         /// <param name="primaryKey"></param>
         /// <param name="nullable"></param>
         /// <returns></returns>
-        public Sqled ColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
         {
             if (primaryKey)
             {
@@ -157,7 +211,7 @@ namespace Delly.DBunny.Sqlite
             {
                 var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                var columnDefine = ColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
                 sql.Builder.Append(columnDefine.Sql);
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
@@ -167,7 +221,22 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
-        /// 获取所有列
+        /// 删除表
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public Sqled DropTable(string schema, string table)
+        {
+            return $"DROP TABLE IF EXISTS {GetSpecialName(table)};";
+        }
+
+        #endregion
+
+        #region 数据列
+
+        /// <summary>
+        /// 获取表中所有列
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="table"></param>
@@ -195,6 +264,19 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
+        /// 重命名列
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        {
+            return $"ALTER TABLE {GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
+        }
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>
@@ -209,19 +291,6 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
-        /// 重命名列
-        /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <returns></returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
-        {
-            return $"ALTER TABLE {GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
-        }
-
-        /// <summary>
         /// 删除列
         /// </summary>
         /// <param name="schema"></param>
@@ -232,6 +301,10 @@ namespace Delly.DBunny.Sqlite
         {
             return $"ALTER TABLE {GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
         }
+
+        #endregion
+
+        #region 索引
 
         /// <summary>
         /// 获取表的所有索引
@@ -262,5 +335,18 @@ namespace Delly.DBunny.Sqlite
             return $"CREATE INDEX {table}_{column}_IDX ON {tableName} ({columnName});";
         }
 
+        /// <summary>
+        /// 删除索引
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        public Sqled DropIndex(string schema, string table, string column)
+        {
+            return $"DROP INDEX IF EXISTS {table}_{column}_IDX;";
+        }
+
+        #endregion
     }
 }

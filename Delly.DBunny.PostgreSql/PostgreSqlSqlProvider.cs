@@ -11,7 +11,12 @@ namespace Delly.DBunny.PostgreSql
     public class PostgreSqlSqlProvider : ISqlProvider
     {
         /// <summary>
-        /// 是否有 Schema
+        /// 是否有 数据库 层
+        /// </summary>
+        public bool HasDatabase => true;
+
+        /// <summary>
+        /// 是否有 Schema 层
         /// </summary>
         public bool HasSchema => true;
 
@@ -107,6 +112,58 @@ namespace Delly.DBunny.PostgreSql
             }
         }
 
+        #region 数据库
+
+        /// <summary>
+        /// 获取所有 数据库
+        /// </summary>
+        /// <returns></returns>
+        public Sqled GetDatabases()
+        {
+            return "SELECT datname FROM pg_database WHERE datistemplate = false;";
+        }
+
+        /// <summary>
+        /// 创建 数据库
+        /// </summary>
+        /// <param name="database"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public Sqled CreateDatabase(string database, IDictionary<string, object> options)
+        {
+            var sql = $"CREATE DATABASE {GetSpecialName(database)}";
+            if (options != null)
+            {
+                if (options.TryGetValue("owner", out var owner) && owner != null)
+                {
+                    sql += $" OWNER {GetSpecialName(owner.ToString())}";
+                }
+                if (options.TryGetValue("encoding", out var encoding) && encoding != null)
+                {
+                    sql += $" ENCODING '{encoding}'";
+                }
+                if (options.TryGetValue("template", out var template) && template != null)
+                {
+                    sql += $" TEMPLATE {GetSpecialName(template.ToString())}";
+                }
+            }
+            return sql + ";";
+        }
+
+        /// <summary>
+        /// 删除 数据库
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
+        public Sqled DropDatabase(string database)
+        {
+            return $"DROP DATABASE IF EXISTS {GetSpecialName(database)};";
+        }
+
+        #endregion
+
+        #region Schema
+
         /// <summary>
         /// 获取所有 Schema
         /// </summary>
@@ -120,14 +177,37 @@ namespace Delly.DBunny.PostgreSql
         /// 创建 Schema
         /// </summary>
         /// <param name="schema"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public Sqled CreateSchema(string schema)
+        public Sqled CreateSchema(string schema, IDictionary<string, object> options)
         {
-            return $"CREATE SCHEMA {GetSpecialName(schema)};";
+            var sql = $"CREATE SCHEMA {GetSpecialName(schema)}";
+            if (options != null)
+            {
+                if (options.TryGetValue("authorization", out var authorization) && authorization != null)
+                {
+                    sql += $" AUTHORIZATION {GetSpecialName(authorization.ToString())}";
+                }
+            }
+            return sql + ";";
         }
 
         /// <summary>
-        /// 获取所有表
+        /// 删除 Schema
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <returns></returns>
+        public Sqled DropSchema(string schema)
+        {
+            return $"DROP SCHEMA IF EXISTS {GetSpecialName(schema)} CASCADE;";
+        }
+
+        #endregion
+
+        #region 数据表
+
+        /// <summary>
+        /// 获取 Schema 所有表
         /// </summary>
         /// <param name="schema"></param>
         /// <returns></returns>
@@ -137,14 +217,14 @@ namespace Delly.DBunny.PostgreSql
         }
 
         /// <summary>
-        /// 列定义
+        /// 获取创建表时的字段定义
         /// </summary>
         /// <param name="column"></param>
         /// <param name="columnType"></param>
         /// <param name="primaryKey"></param>
         /// <param name="nullable"></param>
         /// <returns></returns>
-        public Sqled ColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
         {
             if (primaryKey)
             {
@@ -154,7 +234,7 @@ namespace Delly.DBunny.PostgreSql
         }
 
         /// <summary>
-        /// 创建表
+        /// 创建 表
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="table"></param>
@@ -168,7 +248,7 @@ namespace Delly.DBunny.PostgreSql
             {
                 var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                var columnDefine = ColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
                 sql.Builder.Append(columnDefine.Sql);
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
@@ -178,7 +258,22 @@ namespace Delly.DBunny.PostgreSql
         }
 
         /// <summary>
-        /// 获取所有列
+        /// 删除 表
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public Sqled DropTable(string schema, string table)
+        {
+            return $"DROP TABLE IF EXISTS {GetSpecialName(schema)}.{GetSpecialName(table)} CASCADE;";
+        }
+
+        #endregion
+
+        #region 数据列
+
+        /// <summary>
+        /// 获取表中所有列
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="table"></param>
@@ -238,6 +333,19 @@ ORDER BY
         }
 
         /// <summary>
+        /// 重命名列
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        {
+            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
+        }
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>
@@ -252,19 +360,6 @@ ORDER BY
         }
 
         /// <summary>
-        /// 重命名列
-        /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <returns></returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
-        {
-            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
-        }
-
-        /// <summary>
         /// 删除列
         /// </summary>
         /// <param name="schema"></param>
@@ -275,6 +370,10 @@ ORDER BY
         {
             return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
         }
+
+        #endregion
+
+        #region 索引
 
         /// <summary>
         /// 获取表的所有索引
@@ -307,7 +406,7 @@ ORDER BY
         }
 
         /// <summary>
-        /// 创建索引
+        /// 创建 索引
         /// </summary>
         /// <param name="indexDesciptor"></param>
         /// <returns></returns>
@@ -325,5 +424,18 @@ ORDER BY
             return $"CREATE INDEX {table}_{column}_IDX ON {schemaName}.{tableName} ({columnName});";
         }
 
+        /// <summary>
+        /// 删除 索引
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        public Sqled DropIndex(string schema, string table, string column)
+        {
+            return $"DROP INDEX IF EXISTS {GetSpecialName(schema)}.{table}_{column}_IDX CASCADE;";
+        }
+
+        #endregion
     }
 }

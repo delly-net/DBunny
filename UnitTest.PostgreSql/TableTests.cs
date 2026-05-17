@@ -172,7 +172,7 @@ public class TableTests : IDisposable
         var schemaName = "test_schema_" + Guid.NewGuid().ToString("N");
 
         // Act
-        var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName);
+        var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null);
         await ExecuteNonQueryAsync(_fixture.Connection, createSchemaSql);
         var schemas = await _fixture.Provider.GetSchemas(_fixture.Connection);
 

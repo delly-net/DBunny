@@ -11,7 +11,12 @@ namespace Delly.DBunny.Oracle
     public class OracleSqlProvider : ISqlProvider
     {
         /// <summary>
-        /// 是否有 Schema
+        /// 是否有 数据库 层
+        /// </summary>
+        public bool HasDatabase => false;
+
+        /// <summary>
+        /// 是否有 Schema 层
         /// </summary>
         public bool HasSchema => true;
 
@@ -108,6 +113,42 @@ namespace Delly.DBunny.Oracle
             }
         }
 
+        #region 数据库
+
+        /// <summary>
+        /// 获取所有 数据库
+        /// </summary>
+        /// <returns></returns>
+        public Sqled GetDatabases()
+        {
+            throw new NotSupportedException("Oracle does not support multiple databases at SQL level. Databases are created at the instance level. HasDatabase is false.");
+        }
+
+        /// <summary>
+        /// 创建 数据库
+        /// </summary>
+        /// <param name="database"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public Sqled CreateDatabase(string database, IDictionary<string, object> options)
+        {
+            throw new NotSupportedException("Oracle databases are created at the instance level, not via SQL commands. HasDatabase is false.");
+        }
+
+        /// <summary>
+        /// 删除 数据库
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
+        public Sqled DropDatabase(string database)
+        {
+            throw new NotSupportedException("Oracle does not support dropping databases at SQL level. HasDatabase is false.");
+        }
+
+        #endregion
+
+        #region Schema
+
         /// <summary>
         /// 获取所有 Schema
         /// </summary>
@@ -121,14 +162,49 @@ namespace Delly.DBunny.Oracle
         /// 创建 Schema
         /// </summary>
         /// <param name="schema"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public Sqled CreateSchema(string schema)
+        public Sqled CreateSchema(string schema, IDictionary<string, object> options)
         {
-            return $"CREATE USER {GetSpecialName(schema)} IDENTIFIED BY password DEFAULT TABLESPACE USERS TEMPORARY TABLESPACE TEMP; GRANT CONNECT, RESOURCE TO {GetSpecialName(schema)};";
+            var password = "password";
+            var tablespace = "USERS";
+            var tempTablespace = "TEMP";
+
+            if (options != null)
+            {
+                if (options.TryGetValue("password", out var pwd))
+                {
+                    password = pwd.ToString();
+                }
+                if (options.TryGetValue("tablespace", out var ts))
+                {
+                    tablespace = ts.ToString();
+                }
+                if (options.TryGetValue("temp_tablespace", out var tts))
+                {
+                    tempTablespace = tts.ToString();
+                }
+            }
+
+            return $"CREATE USER {GetSpecialName(schema)} IDENTIFIED BY {password} DEFAULT TABLESPACE {tablespace} TEMPORARY TABLESPACE {tempTablespace}; GRANT CONNECT, RESOURCE TO {GetSpecialName(schema)};";
         }
 
         /// <summary>
-        /// 获取所有表
+        /// 删除 Schema
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <returns></returns>
+        public Sqled DropSchema(string schema)
+        {
+            return $"DROP USER {GetSpecialName(schema)} CASCADE;";
+        }
+
+        #endregion
+
+        #region 数据表
+
+        /// <summary>
+        /// 获取 Schema 所有表
         /// </summary>
         /// <param name="schema"></param>
         /// <returns></returns>
@@ -139,14 +215,14 @@ namespace Delly.DBunny.Oracle
         }
 
         /// <summary>
-        /// 列定义
+        /// 获取创建表时的字段定义
         /// </summary>
         /// <param name="column"></param>
         /// <param name="columnType"></param>
         /// <param name="primaryKey"></param>
         /// <param name="nullable"></param>
         /// <returns></returns>
-        public Sqled ColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
         {
             if (primaryKey)
             {
@@ -156,7 +232,7 @@ namespace Delly.DBunny.Oracle
         }
 
         /// <summary>
-        /// 创建表
+        /// 创建 表
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="table"></param>
@@ -170,7 +246,7 @@ namespace Delly.DBunny.Oracle
             {
                 var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                var columnDefine = ColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
                 sql.Builder.Append(columnDefine.Sql);
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
@@ -180,7 +256,22 @@ namespace Delly.DBunny.Oracle
         }
 
         /// <summary>
-        /// 获取所有列
+        /// 删除 表
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public Sqled DropTable(string schema, string table)
+        {
+            return $"DROP TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} PURGE;";
+        }
+
+        #endregion
+
+        #region 数据列
+
+        /// <summary>
+        /// 获取表中所有列
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="table"></param>
@@ -239,6 +330,19 @@ ORDER BY
         }
 
         /// <summary>
+        /// 重命名列
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <param name="columnTarget"></param>
+        /// <returns></returns>
+        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        {
+            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
+        }
+
+        /// <summary>
         /// 复制列
         /// </summary>
         /// <param name="schema"></param>
@@ -253,19 +357,6 @@ ORDER BY
         }
 
         /// <summary>
-        /// 重命名列
-        /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <returns></returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
-        {
-            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
-        }
-
-        /// <summary>
         /// 删除列
         /// </summary>
         /// <param name="schema"></param>
@@ -276,6 +367,10 @@ ORDER BY
         {
             return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
         }
+
+        #endregion
+
+        #region 索引
 
         /// <summary>
         /// 获取表的所有索引
@@ -305,7 +400,7 @@ ORDER BY
         }
 
         /// <summary>
-        /// 创建索引
+        /// 创建 索引
         /// </summary>
         /// <param name="indexDesciptor"></param>
         /// <returns></returns>
@@ -323,5 +418,18 @@ ORDER BY
             return $"CREATE INDEX {table}_{column}_IDX ON {schemaName}.{tableName} ({columnName});";
         }
 
+        /// <summary>
+        /// 删除 索引
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="table"></param>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        public Sqled DropIndex(string schema, string table, string column)
+        {
+            return $"DROP INDEX {GetSpecialName(schema)}.{table}_{column}_IDX;";
+        }
+
+        #endregion
     }
 }
