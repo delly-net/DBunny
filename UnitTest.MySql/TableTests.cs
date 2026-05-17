@@ -57,8 +57,8 @@ public class TableTests : IAsyncLifetime
     {
         _connection.Open();
         // 创建测试数据库 (MySQL中schema就是database)
-        var createSchemaSql = new Sqled($"CREATE DATABASE IF NOT EXISTS `{_testSchema}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        await ExecuteNonQueryAsync(_connection, createSchemaSql);
+        var createDatabaseSql = _provider.SqlProvider.CreateDatabase(_testSchema, null);
+        await ExecuteNonQueryAsync(_connection, createDatabaseSql);
 
         // 切换到测试数据库
         var useSchemaSql = new Sqled($"USE `{_testSchema}`");
@@ -73,9 +73,9 @@ public class TableTests : IAsyncLifetime
             var useMysqlSql = new Sqled("USE `mysql`");
             await ExecuteNonQueryAsync(_connection, useMysqlSql);
 
-            //// 删除测试数据库
-            //var dropDatabaseSql = new Sqled($"DROP DATABASE IF EXISTS `{_testDatabaseName}`");
-            //await ExecuteNonQueryAsync(_connection, dropDatabaseSql);
+            // 删除测试数据库
+            var dropDatabaseSql = _provider.SqlProvider.DropDatabase(_testSchema);
+            await ExecuteNonQueryAsync(_connection, dropDatabaseSql);
         }
         catch { }
         finally
@@ -105,8 +105,8 @@ public class TableTests : IAsyncLifetime
         finally
         {
             // Cleanup
-            var dropSchemaSql = new Sqled($"DROP DATABASE IF EXISTS `{schemaName}`");
-            await ExecuteNonQueryAsync(_connection, dropSchemaSql);
+            var dropDatabaseSql = _provider.SqlProvider.DropDatabase(schemaName);
+            await ExecuteNonQueryAsync(_connection, dropDatabaseSql);
         }
     }
 
@@ -138,7 +138,7 @@ public class TableTests : IAsyncLifetime
         finally
         {
             // Cleanup
-            var dropTableSql = new Sqled($"DROP TABLE IF EXISTS `{tableName}`");
+            var dropTableSql = _provider.SqlProvider.DropTable(_testSchema, tableName);
             await ExecuteNonQueryAsync(_connection, dropTableSql);
         }
     }
@@ -311,7 +311,8 @@ public class TableTests : IAsyncLifetime
         await ExecuteNonQueryAsync(_connection, insertSql);
 
         // Act - 先添加列
-        var addColumnSql = $"ALTER TABLE `{tableName}` ADD COLUMN `CopiedValue` INT;";
+        var columnDesciptor = new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "CopiedValue", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = true };
+        var addColumnSql = _provider.SqlProvider.CreateColumn(columnDesciptor);
         await ExecuteNonQueryAsync(_connection, addColumnSql);
 
         // 然后复制数据
@@ -347,10 +348,14 @@ public class TableTests : IAsyncLifetime
 
     private async Task CreateSimpleTableAsync(string schema, string tableName, string columns)
     {
-        var dropSql = $"DROP TABLE IF EXISTS `{tableName}`;";
-        await ExecuteNonQueryAsync(_connection, dropSql);
-        var sql = $"CREATE TABLE `{tableName}`({columns});";
-        await ExecuteNonQueryAsync(_connection, sql);
+        var dropTableSql = _provider.SqlProvider.DropTable(schema, tableName);
+        await ExecuteNonQueryAsync(_connection, dropTableSql);
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(schema, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 
     private async Task ExecuteNonQueryAsync(DbConnection connection, Sqled sql)
@@ -391,5 +396,217 @@ public class TableTests : IAsyncLifetime
             }
         });
         return result;
+    }
+
+    [Fact]
+    public void Provider_ShouldHaveCorrectDatabaseType()
+    {
+        // Assert
+        Assert.Equal("MYSQL", _provider.DatabaseType);
+        Assert.NotNull(_provider.SqlProvider);
+    }
+
+    [Fact]
+    public void SqlProvider_HasDatabase_ShouldBeTrue()
+    {
+        // Assert
+        Assert.True(_provider.SqlProvider.HasDatabase);
+    }
+
+    [Fact]
+    public void SqlProvider_HasSchema_ShouldBeFalse()
+    {
+        // Assert
+        Assert.False(_provider.SqlProvider.HasSchema);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialName_ShouldQuoteWithBackticks()
+    {
+        // Arrange
+        var testName = "MyTable";
+
+        // Act
+        var result = _provider.SqlProvider.GetSpecialName(testName);
+
+        // Assert
+        Assert.Equal("`MyTable`", result);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_TypeCode_ShouldReturnCorrectTypes()
+    {
+        // Act
+        var boolType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Boolean);
+        var intType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Int32);
+        var longType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Int64);
+        var doubleType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Double);
+        var decimalType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Decimal);
+        var stringType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.String);
+        var dateTimeType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.DateTime);
+
+        // Assert
+        Assert.Equal("TINYINT(1)", boolType);
+        Assert.Equal("INT", intType);
+        Assert.Equal("BIGINT", longType);
+        Assert.Equal("DOUBLE", doubleType);
+        Assert.Equal("DECIMAL(18,4)", decimalType);
+        Assert.Equal("VARCHAR(255)", stringType);
+        Assert.Equal("DATETIME", dateTimeType);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_DbColumnType_ShouldReturnCorrectTypes()
+    {
+        // Act
+        var tinyType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TINY);
+        var intType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.INTEGER);
+        var longType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.LONG);
+        var decimalType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL);
+        var varcharType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR);
+        var textType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TEXT);
+        var timeType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TIME);
+
+        // Assert
+        Assert.Equal("TINYINT", tinyType);
+        Assert.Equal("INT", intType);
+        Assert.Equal("BIGINT", longType);
+        Assert.Equal("DECIMAL(18,4)", decimalType);
+        Assert.Equal("VARCHAR(255)", varcharType);
+        Assert.Equal("TEXT", textType);
+        Assert.Equal("DATETIME", timeType);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_VarcharWithLength_ShouldIncludeLength()
+    {
+        // Act
+        var varchar50 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 50);
+        var varchar100 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 100);
+
+        // Assert
+        Assert.Equal("VARCHAR(50)", varchar50);
+        Assert.Equal("VARCHAR(100)", varchar100);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_DecimalWithPrecision_ShouldIncludePrecision()
+    {
+        // Act
+        var decimal182 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL, 18, 2);
+        var decimal104 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL, 10, 4);
+
+        // Assert
+        Assert.Equal("DECIMAL(18,2)", decimal182);
+        Assert.Equal("DECIMAL(10,4)", decimal104);
+    }
+
+    [Fact]
+    public void SqlProvider_CreateTableColumnDefine_ShouldReturnCorrectDefinition()
+    {
+        // Act
+        var primaryKeyColumn = _provider.SqlProvider.CreateTableColumnDefine("Id", "INT", true, false);
+        var nullableColumn = _provider.SqlProvider.CreateTableColumnDefine("Name", "VARCHAR(100)", false, false);
+        var nullableTrueColumn = _provider.SqlProvider.CreateTableColumnDefine("Age", "INT", false, true);
+
+        // Assert
+        Assert.Equal("`Id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY", primaryKeyColumn.Sql);
+        Assert.Equal("`Name` VARCHAR(100) NOT NULL", nullableColumn.Sql);
+        Assert.Equal("`Age` INT NULL", nullableTrueColumn.Sql);
+    }
+
+    [Fact]
+    public void SqlProvider_CreateDatabase_WithOptions_ShouldIncludeOptions()
+    {
+        // Act
+        var options = new Dictionary<string, object>
+        {
+            { "character_set", "latin1" },
+            { "collation", "latin1_swedish_ci" }
+        };
+        var result = _provider.SqlProvider.CreateDatabase("testdb", options);
+
+        // Assert
+        Assert.Contains("CREATE DATABASE `testdb`", result.Sql);
+        Assert.Contains("CHARACTER SET latin1", result.Sql);
+        Assert.Contains("COLLATE latin1_swedish_ci", result.Sql);
+    }
+
+    [Fact]
+    public void SqlProvider_DropDatabase_ShouldGenerateCorrectSql()
+    {
+        // Act
+        var result = _provider.SqlProvider.DropDatabase("testdb");
+
+        // Assert
+        Assert.Equal("DROP DATABASE IF EXISTS `testdb`;", result.Sql);
+    }
+
+    [Fact]
+    public async Task DropTable_WhenTableExists_ShouldDropTableSuccessfully()
+    {
+        // Arrange
+        var tableName = "TestDropTable";
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
+
+        // Act
+        var dropTableSql = _provider.SqlProvider.DropTable(_testSchema, tableName);
+        await ExecuteNonQueryAsync(_connection, dropTableSql);
+        var tables = await _provider.GetTables(_connection, _testSchema);
+
+        // Assert
+        Assert.DoesNotContain(tables, t => t.TableName == tableName);
+    }
+
+    [Fact]
+    public async Task DropIndex_WhenIndexExists_ShouldDropIndexSuccessfully()
+    {
+        // Arrange
+        var tableName = "TestDropIndex";
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
+
+        var indexDesciptor = new DbIndexDesciptor { SchemaName = _testSchema, TableName = tableName, IndexName = "Value", UniqueFlag = false, ColumnName = "Value" };
+        var createIndexSql = _provider.SqlProvider.CreateIndex(indexDesciptor);
+        await ExecuteNonQueryAsync(_connection, createIndexSql);
+
+        // Act
+        var dropIndexSql = _provider.SqlProvider.DropIndex(_testSchema, tableName, "Value");
+        await ExecuteNonQueryAsync(_connection, dropIndexSql);
+        var indexes = await _provider.GetIndexes(_connection, _testSchema, tableName);
+
+        // Assert
+        Assert.DoesNotContain(indexes, i => i.IndexName == $"{tableName}_Value_IDX");
+    }
+
+    [Fact]
+    public void SqlProvider_GetSchemas_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSchemas());
+    }
+
+    [Fact]
+    public void SqlProvider_CreateSchema_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
+    }
+
+    [Fact]
+    public void SqlProvider_DropSchema_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.DropSchema("testschema"));
     }
 }

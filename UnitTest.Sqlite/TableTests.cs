@@ -66,6 +66,27 @@ public class TableTests : IDisposable
     }
 
     [Fact]
+    public async Task DropTable_WhenTableExists_ShouldDropTableSuccessfully()
+    {
+        // Arrange
+        var tableName = "TestDropTable";
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
+
+        // Act
+        var dropTableSql = _provider.SqlProvider.DropTable(string.Empty, tableName);
+        await ExecuteNonQueryAsync(_connection, dropTableSql);
+        var tables = await _provider.GetTables(_connection, string.Empty);
+
+        // Assert
+        Assert.DoesNotContain(tables, t => t.TableName == tableName);
+    }
+
+    [Fact]
     public async Task CreateColumn_WhenTableExists_ShouldAddColumnSuccessfully()
     {
         // Arrange
@@ -130,6 +151,41 @@ public class TableTests : IDisposable
 
         // Assert
         Assert.Contains(indexes, i => i.IndexName == $"{tableName}_Email_IDX");
+    }
+
+    [Fact]
+    public async Task DropIndex_WhenIndexExists_ShouldDropIndexSuccessfully()
+    {
+        // Arrange
+        var tableName = "TestDropIndex";
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
+
+        var indexDesciptor = new DbIndexDesciptor { SchemaName = string.Empty, TableName = tableName, IndexName = "Value", UniqueFlag = false, ColumnName = "Value" };
+        var createIndexSql = _provider.SqlProvider.CreateIndex(indexDesciptor);
+        await ExecuteNonQueryAsync(_connection, createIndexSql);
+
+        // Act
+        var indexesBefore = await _provider.GetIndexes(_connection, string.Empty, tableName);
+
+        // SQLite drop index
+        var dropIndexSql = _provider.SqlProvider.DropIndex(string.Empty, tableName, "Value");
+        await ExecuteNonQueryAsync(_connection, dropIndexSql);
+        var indexesAfter = await _provider.GetIndexes(_connection, string.Empty, tableName);
+
+        // Assert
+        var indexCountBefore = indexesBefore.Count;
+        var indexCountAfter = indexesAfter.Count;
+        Assert.Equal(indexCountBefore - 1, indexCountAfter);
+
+        // Cleanup
+        var dropTableSql = _provider.SqlProvider.DropTable(string.Empty, tableName);
+        await ExecuteNonQueryAsync(_connection, dropTableSql);
     }
 
     [Fact]
@@ -213,10 +269,176 @@ public class TableTests : IDisposable
         Assert.Contains(_testDbPath, _connectionDescriptor.ConnectionString);
     }
 
+    [Fact]
+    public void Provider_ShouldHaveCorrectDatabaseType()
+    {
+        // Assert
+        Assert.Equal("SQLITE", _provider.DatabaseType);
+        Assert.NotNull(_provider.SqlProvider);
+    }
+
+    [Fact]
+    public void SqlProvider_HasDatabase_ShouldBeFalse()
+    {
+        // Assert
+        Assert.False(_provider.SqlProvider.HasDatabase);
+    }
+
+    [Fact]
+    public void SqlProvider_HasSchema_ShouldBeFalse()
+    {
+        // Assert
+        Assert.False(_provider.SqlProvider.HasSchema);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialName_ShouldQuoteWithSquareBrackets()
+    {
+        // Arrange
+        var testName = "MyTable";
+
+        // Act
+        var result = _provider.SqlProvider.GetSpecialName(testName);
+
+        // Assert
+        Assert.Equal("[MyTable]", result);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_TypeCode_ShouldReturnCorrectTypes()
+    {
+        // Act
+        var boolType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Boolean);
+        var intType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Int32);
+        var longType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Int64);
+        var doubleType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Double);
+        var decimalType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.Decimal);
+        var stringType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.String);
+        var dateTimeType = _provider.SqlProvider.GetSpecialTypeName(TypeCode.DateTime);
+
+        // Assert
+        Assert.Equal("INTEGER", boolType);
+        Assert.Equal("INTEGER", intType);
+        Assert.Equal("INTEGER", longType);
+        Assert.Equal("REAL", doubleType);
+        Assert.Equal("REAL", decimalType);
+        Assert.Equal("TEXT", stringType);
+        Assert.Equal("TEXT(32)", dateTimeType);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_DbColumnType_ShouldReturnCorrectTypes()
+    {
+        // Act
+        var tinyType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TINY);
+        var intType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.INTEGER);
+        var longType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.LONG);
+        var decimalType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL);
+        var varcharType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR);
+        var textType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TEXT);
+        var timeType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TIME);
+
+        // Assert
+        Assert.Equal("INTEGER", tinyType);
+        Assert.Equal("INTEGER", intType);
+        Assert.Equal("INTEGER", longType);
+        Assert.Equal("REAL", decimalType);
+        Assert.Equal("TEXT", varcharType);
+        Assert.Equal("TEXT", textType);
+        Assert.Equal("TEXT(32)", timeType);
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_VarcharWithLength_ShouldIncludeLength()
+    {
+        // Act
+        var varchar50 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 50);
+        var varchar100 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 100);
+
+        // Assert
+        Assert.Equal("TEXT(50)", varchar50);
+        Assert.Equal("TEXT(100)", varchar100);
+    }
+
+    [Fact]
+    public void SqlProvider_CreateTableColumnDefine_ShouldReturnCorrectDefinition()
+    {
+        // Act
+        var primaryKeyColumn = _provider.SqlProvider.CreateTableColumnDefine("Id", "INTEGER", true, false);
+        var nullableColumn = _provider.SqlProvider.CreateTableColumnDefine("Name", "TEXT(100)", false, false);
+        var nullableTrueColumn = _provider.SqlProvider.CreateTableColumnDefine("Age", "INTEGER", false, true);
+
+        // Assert
+        Assert.Equal("[Id] INTEGER NOT NULL PRIMARY KEY", primaryKeyColumn.Sql);
+        Assert.Equal("[Name] TEXT(100) NOT NULL", nullableColumn.Sql);
+        Assert.Equal("[Age] INTEGER NULL", nullableTrueColumn.Sql);
+    }
+
+    [Fact]
+    public void SqlProvider_GetDatabases_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetDatabases());
+    }
+
+    [Fact]
+    public void SqlProvider_CreateDatabase_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null));
+    }
+
+    [Fact]
+    public void SqlProvider_DropDatabase_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.DropDatabase("testdb"));
+    }
+
+    [Fact]
+    public void SqlProvider_GetSchemas_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSchemas());
+    }
+
+    [Fact]
+    public void SqlProvider_CreateSchema_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
+    }
+
+    [Fact]
+    public void SqlProvider_DropSchema_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.DropSchema("testschema"));
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_UnsupportedTypeCode_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSpecialTypeName(TypeCode.Object));
+    }
+
+    [Fact]
+    public void SqlProvider_GetSpecialTypeName_UnsupportedDbType_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSpecialTypeName(DbColumnType.UNKNOW));
+    }
+
     private async Task CreateSimpleTableAsync(string tableName, string columns)
     {
-        var sql = $"CREATE TABLE [{tableName}]({columns});";
-        await ExecuteNonQueryAsync(_connection, sql);
+        // Parse columns from string and create column descriptors
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 
     private async Task ExecuteNonQueryAsync(DbConnection connection, Sqled sql)

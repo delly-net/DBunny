@@ -427,15 +427,16 @@ public class CrudTests : IDisposable
 
     private async Task CreateUsersTableAsync()
     {
-        var sql = new Sqled();
-        sql.Builder.AppendLine("CREATE TABLE [Users](");
-        sql.Builder.Append("    [Id] INTEGER NOT NULL PRIMARY KEY,");
-        sql.Builder.Append("    [Name] TEXT(100) NOT NULL,");
-        sql.Builder.Append("    [Email] TEXT(255) NOT NULL,");
-        sql.Builder.Append("    [Age] INTEGER NULL,");
-        sql.Builder.AppendLine("    [CreatedAt] TEXT(32) NOT NULL");
-        sql.Builder.AppendLine(");");
-        await ExecuteNonQueryAsync(_connection, sql);
+        var columnDesciptors = new List<DbColumnDesciptor>
+        {
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Email", ColumnType = "TEXT(255)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true },
+            new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "TEXT(32)", PrimaryKeyFlag = false, NullableFlag = false }
+        };
+        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, "Users", columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 
     private async Task InsertUserAsync(string name, string email, long? age, string? createdAt = null)
