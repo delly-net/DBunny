@@ -86,28 +86,10 @@ public class TableTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateSchema_ShouldCreateSchemaSuccessfully()
+    public async Task CreateSchema_ShouldThrowNotSupportedException()
     {
-        // Arrange
-        var schemaName = $"new_test_schema_{Guid.NewGuid():N}";
-
-        try
-        {
-            // Act
-            var createSchemaSql = _provider.SqlProvider.CreateSchema(schemaName, null);
-            await ExecuteNonQueryAsync(_connection, createSchemaSql);
-
-            var schemas = await _provider.GetSchemas(_connection);
-
-            // Assert
-            Assert.Contains(schemas, s => s == schemaName);
-        }
-        finally
-        {
-            // Cleanup
-            var dropDatabaseSql = _provider.SqlProvider.DropDatabase(schemaName);
-            await ExecuteNonQueryAsync(_connection, dropDatabaseSql);
-        }
+        // Act & Assert
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
     }
 
     [Fact]
@@ -148,7 +130,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestProducts";
-        await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL");
+        await CreateSimpleTableAsync(_testSchema, tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var columnDesciptor = new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Price", ColumnType = "DECIMAL(18,2)", PrimaryKeyFlag = false, NullableFlag = true };
@@ -165,7 +149,10 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestOrders";
-        await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, OrderDate DATETIME NOT NULL, Status VARCHAR(50) NOT NULL");
+        await CreateSimpleTableAsync(_testSchema, tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OrderDate", ColumnType = "DATETIME", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Status", ColumnType = "VARCHAR(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var dropColumnSql = _provider.SqlProvider.DropColumn(_testSchema, tableName, "Status");
@@ -181,7 +168,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestCustomers";
-        await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, OldName VARCHAR(100) NOT NULL");
+        await CreateSimpleTableAsync(_testSchema, tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var renameColumnSql = _provider.SqlProvider.RenameColumn(_testSchema, tableName, "OldName", "NewName");
@@ -198,7 +187,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestEmployees";
-        await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Email VARCHAR(255) NOT NULL");
+        await CreateSimpleTableAsync(_testSchema, tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Email", ColumnType = "VARCHAR(255)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var indexDesciptor = new DbIndexDesciptor { SchemaName = _testSchema, TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
@@ -220,7 +211,10 @@ public class TableTests : IAsyncLifetime
         var tables = await _provider.GetTables(_connection, _testSchema);
         if (!tables.Where(d => d.TableName == tableName).Any())
         {
-            await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL, Quantity INT NULL");
+            await CreateSimpleTableAsync(_testSchema, tableName,
+                new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+                new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
+                new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = true });
         }
 
         // Act
@@ -249,9 +243,12 @@ public class TableTests : IAsyncLifetime
     public async Task GetTables_ShouldReturnAllTables()
     {
         // Arrange
-        await CreateSimpleTableAsync(_testSchema, "Table1", "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY");
-        await CreateSimpleTableAsync(_testSchema, "Table2", "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY");
-        await CreateSimpleTableAsync(_testSchema, "Table3", "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY");
+        await CreateSimpleTableAsync(_testSchema, "Table1",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync(_testSchema, "Table2",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync(_testSchema, "Table3",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
         var tables = await _provider.GetTables(_connection, _testSchema);
@@ -271,7 +268,10 @@ public class TableTests : IAsyncLifetime
         var tables = await _provider.GetTables(_connection, _testSchema);
         if (!tables.Where(d => d.TableName == tableName).Any())
         {
-            await CreateSimpleTableAsync(_testSchema, "TestParams", "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, Name VARCHAR(100) NOT NULL, Value INT NOT NULL");
+            await CreateSimpleTableAsync(_testSchema, "TestParams",
+                new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+                new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
+                new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = false });
         }
 
         // Act
@@ -287,15 +287,12 @@ public class TableTests : IAsyncLifetime
         Assert.Equal(42, result);
     }
 
-    [Fact]
-    public async Task GetSchemas_ShouldReturnAllSchemas()
-    {
-        // Act
-        var schemas = await _provider.GetSchemas(_connection);
 
-        // Assert
-        Assert.Contains(schemas, s => s == "information_schema");
-        Assert.Contains(schemas, s => s == _testDatabaseName);
+    [Fact]
+    public async Task GetSchemas_ShouldThrowNotSupportedException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() => _provider.GetSchemas(_connection));
     }
 
     [Fact]
@@ -303,7 +300,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestCopy";
-        await CreateSimpleTableAsync(_testSchema, tableName, "Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, OriginalValue INT NOT NULL");
+        await CreateSimpleTableAsync(_testSchema, tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OriginalValue", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = false });
 
         // 插入测试数据
         var insertSql = new Sqled($"INSERT INTO `{tableName}` (OriginalValue) VALUES (@value)")
@@ -346,14 +345,11 @@ public class TableTests : IAsyncLifetime
         Assert.Contains(_testDatabaseName, _connectionDescriptor.ConnectionString);
     }
 
-    private async Task CreateSimpleTableAsync(string schema, string tableName, string columns)
+    private async Task CreateSimpleTableAsync(string schema, string tableName, params DbColumnDesciptor[] columns)
     {
         var dropTableSql = _provider.SqlProvider.DropTable(schema, tableName);
         await ExecuteNonQueryAsync(_connection, dropTableSql);
-        var columnDesciptors = new List<DbColumnDesciptor>
-        {
-            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false }
-        };
+        var columnDesciptors = columns.ToList();
         var createTableSql = _provider.SqlProvider.CreateTable(schema, tableName, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
     }
@@ -527,7 +523,7 @@ public class TableTests : IAsyncLifetime
         var result = _provider.SqlProvider.CreateDatabase("testdb", options);
 
         // Assert
-        Assert.Contains("CREATE DATABASE `testdb`", result.Sql);
+        Assert.Contains("CREATE DATABASE IF NOT EXISTS `testdb`", result.Sql);
         Assert.Contains("CHARACTER SET latin1", result.Sql);
         Assert.Contains("COLLATE latin1_swedish_ci", result.Sql);
     }

@@ -47,7 +47,9 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestProducts";
-        await CreateSimpleTableAsync(tableName, "\"Id\" SERIAL NOT NULL PRIMARY KEY, \"Name\" VARCHAR(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var columnDesciptor = new DbColumnDesciptor { SchemaName = "public", TableName = tableName, ColumnName = "Price", ColumnType = "NUMERIC(10,2)", PrimaryKeyFlag = false, NullableFlag = true };
@@ -64,7 +66,10 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestOrders";
-        await CreateSimpleTableAsync(tableName, "\"Id\" SERIAL NOT NULL PRIMARY KEY, \"OrderDate\" TIMESTAMP NOT NULL, \"Status\" VARCHAR(50) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OrderDate", ColumnType = "TIMESTAMP", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Status", ColumnType = "VARCHAR(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var dropColumnSql = _fixture.Provider.SqlProvider.DropColumn("public", tableName, "Status");
@@ -80,7 +85,9 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestCustomers";
-        await CreateSimpleTableAsync(tableName, "\"Id\" SERIAL NOT NULL PRIMARY KEY, \"OldName\" VARCHAR(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var renameColumnSql = _fixture.Provider.SqlProvider.RenameColumn("public", tableName, "OldName", "NewName");
@@ -97,7 +104,9 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestEmployees";
-        await CreateSimpleTableAsync(tableName, "\"Id\" SERIAL NOT NULL PRIMARY KEY, \"Email\" VARCHAR(255) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Email", ColumnType = "VARCHAR(255)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var indexDesciptor = new DbIndexDesciptor { SchemaName = "public", TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
@@ -114,7 +123,10 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestItems";
-        await CreateSimpleTableAsync(tableName, "\"Id\" SERIAL NOT NULL PRIMARY KEY, \"Name\" VARCHAR(100) NOT NULL, \"Quantity\" INTEGER NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Act
         var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
@@ -142,9 +154,12 @@ public class TableTests : IDisposable
     public async Task GetTables_ShouldReturnAllTables()
     {
         // Arrange
-        await CreateSimpleTableAsync("Table1", "\"Id\" SERIAL NOT NULL PRIMARY KEY");
-        await CreateSimpleTableAsync("Table2", "\"Id\" SERIAL NOT NULL PRIMARY KEY");
-        await CreateSimpleTableAsync("Table3", "\"Id\" SERIAL NOT NULL PRIMARY KEY");
+        await CreateSimpleTableAsync("Table1",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync("Table2",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync("Table3",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
         var tables = await _fixture.Provider.GetTables(_fixture.Connection, "public");
@@ -184,7 +199,10 @@ public class TableTests : IDisposable
     public async Task Sqled_WithParameters_ShouldExecuteCorrectly()
     {
         // Arrange
-        await CreateSimpleTableAsync("TestParams", "\"Id\" SERIAL NOT NULL PRIMARY KEY, \"Name\" VARCHAR(100) NOT NULL, \"Value\" INTEGER NOT NULL");
+        await CreateSimpleTableAsync("TestParams",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var insertSql = new Sqled("INSERT INTO \"TestParams\" (\"Name\", \"Value\") VALUES (@name, @value)")
@@ -253,12 +271,9 @@ public class TableTests : IDisposable
         Assert.Equal("TIMESTAMP", dateTimeType);
     }
 
-    private async Task CreateSimpleTableAsync(string tableName, string columns)
+    private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
-        var columnDesciptors = new List<DbColumnDesciptor>
-        {
-            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false }
-        };
+        var columnDesciptors = columns.ToList();
         var createTableSql = _fixture.Provider.SqlProvider.CreateTable("public", tableName, columnDesciptors);
         await ExecuteNonQueryAsync(_fixture.Connection, createTableSql);
     }

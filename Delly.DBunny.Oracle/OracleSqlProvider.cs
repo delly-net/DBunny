@@ -380,20 +380,22 @@ ORDER BY
         /// <returns></returns>
         public Sqled GetIndexes(string schema, string table)
         {
-            var upperSchema = schema.ToUpper();
-            var upperTable = table.ToUpper();
+            // Use all_indexes and all_ind_columns to get index information
             return $@"
 SELECT
     i.index_name,
     i.uniqueness,
-    c.column_name
+    c.column_name,
+    i.table_name
 FROM
     all_indexes i
 JOIN
-    all_ind_columns c ON i.index_name = c.index_name AND i.table_owner = c.table_owner
+    all_ind_columns c ON i.index_name = c.index_name AND i.table_name = c.table_name
 WHERE
-    i.table_name = '{upperTable}'
+    UPPER(i.table_owner) = UPPER('{schema}')
+    AND UPPER(i.table_name) = UPPER('{table}')
     AND i.index_name NOT LIKE 'SYS_%'
+    AND i.index_name NOT LIKE '%BIN$%'
 ORDER BY
     i.index_name, c.column_position";
         }
@@ -413,8 +415,9 @@ ORDER BY
             var schemaName = GetSpecialName(schema);
             var tableName = GetSpecialName(table);
             var columnName = GetSpecialName(column);
-            if (unique) { return $"CREATE UNIQUE INDEX {table}_{column}_IDX ON {schemaName}.{tableName} ({columnName});"; }
-            return $"CREATE INDEX {table}_{column}_IDX ON {schemaName}.{tableName} ({columnName});";
+            var indexName = GetSpecialName($"{table}_{column}_IDX");
+            if (unique) { return $"CREATE UNIQUE INDEX {indexName} ON {schemaName}.{tableName} ({columnName});"; }
+            return $"CREATE INDEX {indexName} ON {schemaName}.{tableName} ({columnName});";
         }
 
         /// <summary>
@@ -426,9 +429,9 @@ ORDER BY
         /// <returns></returns>
         public Sqled DropIndex(string schema, string table, string column)
         {
-            // In Oracle, indexes are owned by the user, not by schema prefix
-            // The index name is just {table}_{column}_IDX without schema prefix
-            return $"DROP INDEX {table}_{column}_IDX;";
+            // Index name format matches CreateIndex: {table}_{column}_IDX with quotes
+            var indexName = GetSpecialName($"{table}_{column}_IDX");
+            return $"DROP INDEX {indexName};";
         }
 
         #endregion

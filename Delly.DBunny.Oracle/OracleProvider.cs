@@ -185,6 +185,5 @@ namespace Delly.DBunny.Oracle
             });
             return indexes;
         }
-
     }
 }

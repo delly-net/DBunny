@@ -131,7 +131,7 @@ namespace Delly.DBunny.MySql
         /// <returns></returns>
         public Sqled CreateDatabase(string database, IDictionary<string, object> options)
         {
-            var sql = $"CREATE DATABASE {GetSpecialName(database)}";
+            var sql = $"CREATE DATABASE IF NOT EXISTS {GetSpecialName(database)}";
             if (options != null)
             {
                 if (options.TryGetValue("character_set", out var charset))
@@ -375,7 +375,7 @@ namespace Delly.DBunny.MySql
         /// <returns></returns>
         public Sqled DropIndex(string schema, string table, string column)
         {
-            return $"DROP INDEX {table}_{column}_IDX ON {GetSpecialName(schema)};";
+            return $"DROP INDEX {table}_{column}_IDX ON {GetSpecialName(schema)}.{GetSpecialName(table)};";
         }
 
         #endregion

@@ -91,7 +91,9 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestProducts";
-        await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, Name TEXT(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var columnDesciptor = new DbColumnDesciptor { SchemaName = string.Empty, TableName = tableName, ColumnName = "Price", ColumnType = "REAL", PrimaryKeyFlag = false, NullableFlag = true };
@@ -108,7 +110,10 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestOrders";
-        await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, OrderDate TEXT(32) NOT NULL, Status TEXT(50) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OrderDate", ColumnType = "TEXT(32)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Status", ColumnType = "TEXT(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var dropColumnSql = _provider.SqlProvider.DropColumn(string.Empty, tableName, "Status");
@@ -124,7 +129,9 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestCustomers";
-        await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, OldName TEXT(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var renameColumnSql = _provider.SqlProvider.RenameColumn(string.Empty, tableName, "OldName", "NewName");
@@ -141,7 +148,9 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestEmployees";
-        await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, Email TEXT(255) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Email", ColumnType = "TEXT(255)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var indexDesciptor = new DbIndexDesciptor { SchemaName = string.Empty, TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
@@ -193,7 +202,10 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestItems";
-        await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, Name TEXT(100) NOT NULL, Quantity INTEGER NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Act
         var columns = await _provider.GetColumns(_connection, string.Empty, tableName);
@@ -221,9 +233,9 @@ public class TableTests : IDisposable
     public async Task GetTables_ShouldReturnAllTables()
     {
         // Arrange
-        await CreateSimpleTableAsync("Table1", "Id INTEGER NOT NULL PRIMARY KEY");
-        await CreateSimpleTableAsync("Table2", "Id INTEGER NOT NULL PRIMARY KEY");
-        await CreateSimpleTableAsync("Table3", "Id INTEGER NOT NULL PRIMARY KEY");
+        await CreateSimpleTableAsync("Table1", new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync("Table2", new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync("Table3", new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
         var tables = await _provider.GetTables(_connection, string.Empty);
@@ -238,7 +250,10 @@ public class TableTests : IDisposable
     public async Task Sqled_WithParameters_ShouldExecuteCorrectly()
     {
         // Arrange
-        await CreateSimpleTableAsync("TestParams", "Id INTEGER NOT NULL PRIMARY KEY, Name TEXT(100) NOT NULL, Value INTEGER NOT NULL");
+        await CreateSimpleTableAsync("TestParams",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var insertSql = new Sqled("INSERT INTO [TestParams] (Name, Value) VALUES (@name, @value)")
@@ -430,13 +445,9 @@ public class TableTests : IDisposable
         Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSpecialTypeName(DbColumnType.UNKNOW));
     }
 
-    private async Task CreateSimpleTableAsync(string tableName, string columns)
+    private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
-        // Parse columns from string and create column descriptors
-        var columnDesciptors = new List<DbColumnDesciptor>
-        {
-            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false }
-        };
+        var columnDesciptors = columns.ToList();
         var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
     }

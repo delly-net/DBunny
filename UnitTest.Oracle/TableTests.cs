@@ -66,8 +66,11 @@ public class TableTests : IAsyncLifetime
         var createSchemaSql = _provider.SqlProvider.CreateSchema(_testSchema, options);
         await ExecuteNonQueryAsync(_connection, createSchemaSql);
 
-        var grantPrivilegesSql = new Sqled($"GRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE TRIGGER TO \"{_testSchema}\"");
+        var grantPrivilegesSql = new Sqled($"GRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE TRIGGER, CREATE ANY INDEX, SELECT ANY TABLE, SELECT ANY DICTIONARY TO \"{_testSchema}\"");
         await ExecuteNonQueryAsync(_connection, grantPrivilegesSql);
+
+        var grantQuotaSql = new Sqled($"ALTER USER \"{_testSchema}\" QUOTA UNLIMITED ON USERS");
+        await ExecuteNonQueryAsync(_connection, grantQuotaSql);
     }
 
     public async Task DisposeAsync()
@@ -115,7 +118,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestProducts";
-        await CreateSimpleTableAsync(tableName, "Id NUMBER(10) NOT NULL PRIMARY KEY, Name VARCHAR2(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var columnDesciptor = new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Price", ColumnType = "NUMBER(18,2)", PrimaryKeyFlag = false, NullableFlag = true };
@@ -132,7 +137,10 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestOrders";
-        await CreateSimpleTableAsync(tableName, "Id NUMBER(10) NOT NULL PRIMARY KEY, OrderDate TIMESTAMP NOT NULL, Status VARCHAR2(50) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OrderDate", ColumnType = "TIMESTAMP", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Status", ColumnType = "VARCHAR2(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var dropColumnSql = _provider.SqlProvider.DropColumn(_testSchema, tableName, "Status");
@@ -148,7 +156,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestCustomers";
-        await CreateSimpleTableAsync(tableName, "Id NUMBER(10) NOT NULL PRIMARY KEY, OldName VARCHAR2(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var renameColumnSql = _provider.SqlProvider.RenameColumn(_testSchema, tableName, "OldName", "NewName");
@@ -165,7 +175,9 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestEmployees";
-        await CreateSimpleTableAsync(tableName, "Id NUMBER(10) NOT NULL PRIMARY KEY, Email VARCHAR2(255) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Email", ColumnType = "VARCHAR2(255)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
         var indexDesciptor = new DbIndexDesciptor { SchemaName = _testSchema, TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
@@ -182,7 +194,10 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestItems";
-        await CreateSimpleTableAsync(tableName, "Id NUMBER(10) NOT NULL PRIMARY KEY, Name VARCHAR2(100) NOT NULL, Quantity NUMBER(10) NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "NUMBER(10)", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Act
         var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
@@ -210,9 +225,12 @@ public class TableTests : IAsyncLifetime
     public async Task GetTables_ShouldReturnAllTables()
     {
         // Arrange
-        await CreateSimpleTableAsync("Table1", "Id NUMBER(10) NOT NULL PRIMARY KEY");
-        await CreateSimpleTableAsync("Table2", "Id NUMBER(10) NOT NULL PRIMARY KEY");
-        await CreateSimpleTableAsync("Table3", "Id NUMBER(10) NOT NULL PRIMARY KEY");
+        await CreateSimpleTableAsync("Table1",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync("Table2",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false });
+        await CreateSimpleTableAsync("Table3",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
         var tables = await _provider.GetTables(_connection, _testSchema);
@@ -227,16 +245,19 @@ public class TableTests : IAsyncLifetime
     public async Task Sqled_WithParameters_ShouldExecuteCorrectly()
     {
         // Arrange
-        await CreateSimpleTableAsync("TestParams", "Id NUMBER(10) NOT NULL PRIMARY KEY, Name VARCHAR2(100) NOT NULL, Value NUMBER(10) NOT NULL");
+        await CreateSimpleTableAsync("TestParams",
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Value", ColumnType = "NUMBER(10)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var insertSql = new Sqled($"INSERT INTO \"{_testSchema}\".\"TestParams\" (Id, Name, Value) VALUES (:id, :name, :value)")
+        var insertSql = new Sqled($"INSERT INTO \"{_testSchema}\".\"TestParams\" (\"Id\", \"Name\", \"Value\") VALUES (:id, :name, :value)")
             .Set("id", 1)
             .Set("name", "TestRecord")
             .Set("value", 42);
         await ExecuteNonQueryAsync(_connection, insertSql);
 
-        var selectSql = new Sqled($"SELECT Value FROM \"{_testSchema}\".\"TestParams\" WHERE Name = :name").Set("name", "TestRecord");
+        var selectSql = new Sqled($"SELECT \"Value\" FROM \"{_testSchema}\".\"TestParams\" WHERE \"Name\" = :name").Set("name", "TestRecord");
         var result = await ExecuteScalarAsync<int>(_connection, selectSql);
 
         // Assert
@@ -268,57 +289,33 @@ public class TableTests : IAsyncLifetime
     {
         // Arrange
         var tableName = "TestCopyColumn";
-        await CreateSimpleTableAsync(tableName, "Id NUMBER(10) NOT NULL PRIMARY KEY, OriginalValue VARCHAR2(100) NOT NULL");
+        await CreateSimpleTableAsync(tableName,
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "OriginalValue", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var insertSql = new Sqled($"INSERT INTO \"{_testSchema}\".\"{tableName}\" (Id, OriginalValue) VALUES (:id, :value)")
+        var insertSql = new Sqled($"INSERT INTO \"{_testSchema}\".\"{tableName}\" (\"Id\", \"OriginalValue\") VALUES (:id, :value)")
             .Set("id", 1)
             .Set("value", "Test Value");
         await ExecuteNonQueryAsync(_connection, insertSql);
 
         var copyColumnSql = _provider.SqlProvider.CopyColumn(_testSchema, tableName, "OriginalValue", "CopiedValue", "VARCHAR2(100)");
-        var alterTableSql = new Sqled($"ALTER TABLE \"{_testSchema}\".\"{tableName}\" ADD (CopiedValue VARCHAR2(100))");
+        var alterTableSql = new Sqled($"ALTER TABLE \"{_testSchema}\".\"{tableName}\" ADD (\"CopiedValue\" VARCHAR2(100))");
         await ExecuteNonQueryAsync(_connection, alterTableSql);
         await ExecuteNonQueryAsync(_connection, copyColumnSql);
 
-        var selectSql = new Sqled($"SELECT CopiedValue FROM \"{_testSchema}\".\"{tableName}\" WHERE Id = :id").Set("id", 1);
+        var selectSql = new Sqled($"SELECT \"CopiedValue\" FROM \"{_testSchema}\".\"{tableName}\" WHERE \"Id\" = :id").Set("id", 1);
         var result = await ExecuteScalarAsync<string>(_connection, selectSql);
 
         // Assert
         Assert.Equal("Test Value", result);
     }
 
-    private async Task CreateSimpleTableAsync(string tableName, string columns)
+    private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
-        // Parse columns and quote column names for Oracle
-        var columnParts = columns.Split(',');
-        var quotedColumns = new List<string>();
-        foreach (var part in columnParts)
-        {
-            var trimmed = part.Trim();
-            if (!string.IsNullOrEmpty(trimmed))
-            {
-                // Find the first space or parenthesis to separate column name from type
-                var firstSpace = trimmed.IndexOfAny(new[] { ' ', '(' });
-                if (firstSpace > 0)
-                {
-                    var columnName = trimmed.Substring(0, firstSpace);
-                    var rest = trimmed.Substring(firstSpace);
-                    quotedColumns.Add($"\"{columnName.Trim()}\"{rest}");
-                }
-                else
-                {
-                    quotedColumns.Add($"\"{trimmed}\"");
-                }
-            }
-        }
-
-        var sql = new Sqled();
-        sql.Builder.AppendLine($"CREATE TABLE \"{_testSchema}\".\"{tableName}\"(");
-        sql.Builder.Append($"    {string.Join(", ", quotedColumns)}");
-        sql.Builder.AppendLine();
-        sql.Builder.AppendLine(")");
-        await ExecuteNonQueryAsync(_connection, sql);
+        var columnDesciptors = columns.ToList();
+        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 
     private async Task ExecuteNonQueryAsync(DbConnection connection, Sqled sql)
@@ -519,7 +516,7 @@ public class TableTests : IAsyncLifetime
         var result = _provider.SqlProvider.CreateSchema("testschema", options);
 
         // Assert
-        Assert.Contains("CREATE USER \"testschema\" IDENTIFIED BY testpass123", result.Sql);
+        Assert.Contains("CREATE USER \"testschema\" IDENTIFIED BY \"testpass123\"", result.Sql);
         Assert.Contains("DEFAULT TABLESPACE USERS", result.Sql);
         Assert.Contains("TEMPORARY TABLESPACE TEMP", result.Sql);
     }
