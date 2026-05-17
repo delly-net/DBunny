@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
 		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
 		<Version>2026.5.1</Version>
 		<Authors>Delly.Net</Authors>
-		<Description>Sqlite for Delly.DBunny</Description>
+		<Description>SQLite provider for Delly.DBunny</Description>
 		<PackageIcon>Bunny_128.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -36,7 +36,7 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="..\README.md">
+		<None Include="README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
