@@ -147,19 +147,19 @@ namespace Delly.DBunny.Sqlite
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="table"></param>
-        /// <param name="columnDefines"></param>
+        /// <param name="columnDesciptors"></param>
         /// <returns></returns>
-        public Sqled CreateTable(string schema, string table, IList<Sqled> columnDefines)
+        public Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors)
         {
             var sql = new Sqled();
             sql.Builder.AppendLine($"CREATE TABLE {GetSpecialName(table)}(");
-            for (int i = 0; i < columnDefines.Count; i++)
+            for (int i = 0; i < columnDesciptors.Count; i++)
             {
-                var column = columnDefines[i];
+                var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                sql.Builder.Append(column.Sql);
-                sql.Set(column.Parameters);
-                if (i < columnDefines.Count - 1) { sql.Append(','); }
+                var columnDefine = ColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                sql.Builder.Append(columnDefine.Sql);
+                if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
             }
             sql.Builder.AppendLine(");");
@@ -180,16 +180,18 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 创建列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="typeName"></param>
-        /// <param name="primaryKey"></param>
-        /// <param name="nullable"></param>
+        /// <param name="columnDesciptor"></param>
         /// <returns></returns>
-        public Sqled CreateColumn(string schema, string table, string column, string typeName, bool primaryKey, bool nullable)
+        public Sqled CreateColumn(DbColumnDesciptor columnDesciptor)
         {
-            return $"ALTER TABLE {GetSpecialName(table)} ADD COLUMN {GetSpecialName(column)} {typeName};";
+            var schema = columnDesciptor.SchemaName;
+            var table = columnDesciptor.TableName;
+            var column = columnDesciptor.ColumnName;
+            var columnType = columnDesciptor.ColumnType;
+            var nullable = columnDesciptor.NullableFlag;
+            var primaryKey = columnDesciptor.PrimaryKeyFlag;
+
+            return $"ALTER TABLE {GetSpecialName(table)} ADD COLUMN {GetSpecialName(column)} {columnType}{(nullable ? " NULL" : " NOT NULL")};";
         }
 
         /// <summary>
@@ -245,13 +247,15 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 创建索引
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="unique"></param>
+        /// <param name="indexDesciptor"></param>
         /// <returns></returns>
-        public Sqled CreateIndex(string schema, string table, string column, bool unique)
+        public Sqled CreateIndex(DbIndexDesciptor indexDesciptor)
         {
+            var schema = indexDesciptor.SchemaName;
+            var table = indexDesciptor.TableName;
+            var column = indexDesciptor.ColumnName;
+            var unique = indexDesciptor.UniqueFlag;
+
             var tableName = GetSpecialName(table);
             var columnName = GetSpecialName(column);
             if (unique) { return $"CREATE UNIQUE INDEX {table}_{column}_IDX ON {tableName} ({columnName});"; }

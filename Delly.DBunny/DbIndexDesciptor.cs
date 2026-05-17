@@ -18,5 +18,10 @@ namespace Delly.DBunny
         /// 唯一标识
         /// </summary>
         public bool UniqueFlag { get; set; }
+
+        /// <summary>
+        /// 列名称（用于创建索引）
+        /// </summary>
+        public string ColumnName { get; set; } = string.Empty;
     }
 }

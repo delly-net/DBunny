@@ -46,16 +46,16 @@ public class TableTests : IDisposable
     {
         // Arrange
         var tableName = "TestUsers";
-        var columnDefines = new List<Sqled>
+        var columnDesciptors = new List<DbColumnDesciptor>
         {
-            _provider.SqlProvider.ColumnDefine("Id", "INTEGER", true, false),
-            _provider.SqlProvider.ColumnDefine("Name", "TEXT(100)", false, false),
-            _provider.SqlProvider.ColumnDefine("Age", "INTEGER", false, true),
-            _provider.SqlProvider.ColumnDefine("Email", "TEXT(255)", false, true),
-            _provider.SqlProvider.ColumnDefine("CreatedAt", "TEXT(32)", false, false)
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
+            new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true },
+            new DbColumnDesciptor { ColumnName = "Email", ColumnType = "TEXT(255)", PrimaryKeyFlag = false, NullableFlag = true },
+            new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "TEXT(32)", PrimaryKeyFlag = false, NullableFlag = false }
         };
 
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDefines);
+        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
 
         // Act
         await ExecuteNonQueryAsync(_connection, createTableSql);
@@ -73,7 +73,8 @@ public class TableTests : IDisposable
         await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, Name TEXT(100) NOT NULL");
 
         // Act
-        var addColumnSql = _provider.SqlProvider.CreateColumn(string.Empty, tableName, "Price", "REAL", false, true);
+        var columnDesciptor = new DbColumnDesciptor { SchemaName = string.Empty, TableName = tableName, ColumnName = "Price", ColumnType = "REAL", PrimaryKeyFlag = false, NullableFlag = true };
+        var addColumnSql = _provider.SqlProvider.CreateColumn(columnDesciptor);
         await ExecuteNonQueryAsync(_connection, addColumnSql);
         var columns = await _provider.GetColumns(_connection, string.Empty, tableName);
 
@@ -122,7 +123,8 @@ public class TableTests : IDisposable
         await CreateSimpleTableAsync(tableName, "Id INTEGER NOT NULL PRIMARY KEY, Email TEXT(255) NOT NULL");
 
         // Act
-        var createIndexSql = _provider.SqlProvider.CreateIndex(string.Empty, tableName, "Email", true);
+        var indexDesciptor = new DbIndexDesciptor { SchemaName = string.Empty, TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
+        var createIndexSql = _provider.SqlProvider.CreateIndex(indexDesciptor);
         await ExecuteNonQueryAsync(_connection, createIndexSql);
         var indexes = await _provider.GetIndexes(_connection, string.Empty, tableName);
 

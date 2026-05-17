@@ -67,7 +67,7 @@ namespace Delly.DBunny
         /// </summary>
         /// <param name="schema"></param>
         /// <returns></returns>
-        Sqled CreateTable(string schema, string table, IList<Sqled> columnDefines);
+        Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors);
 
         /// <summary>
         /// 获取表中所有列
@@ -83,7 +83,7 @@ namespace Delly.DBunny
         /// <param name="schema"></param>
         /// <param name="table"></param>
         /// <returns></returns>
-        Sqled CreateColumn(string schema, string table, string column, string columnType, bool primaryKey, bool nullable);
+        Sqled CreateColumn(DbColumnDesciptor columnDesciptor);
 
         /// <summary>
         /// 重命名列
@@ -123,6 +123,6 @@ namespace Delly.DBunny
         /// <param name="schema"></param>
         /// <param name="table"></param>
         /// <returns></returns>
-        Sqled CreateIndex(string schema, string table, string column, bool unique);
+        Sqled CreateIndex(DbIndexDesciptor indexDesciptor);
     }
 }

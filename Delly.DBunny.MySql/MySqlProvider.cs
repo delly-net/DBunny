@@ -168,9 +168,11 @@ namespace Delly.DBunny.MySql
                     {
                         indexes.Add(new DbIndexDesciptor()
                         {
+                            SchemaName = schema,
                             TableName = table,
                             IndexName = indexName,
                             UniqueFlag = reader.GetBoolean(reader.GetOrdinal("NON_UNIQUE")) == false,
+                            ColumnName = reader.GetString(reader.GetOrdinal("COLUMN_NAME")),
                         });
                     }
                 }
