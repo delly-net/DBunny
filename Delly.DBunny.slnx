@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/UnitTests/">
     <Project Path="UnitTest.MySql/UnitTest.MySql.csproj" />
+    <Project Path="UnitTest.PostgreSql/UnitTest.PostgreSql.csproj" />
     <Project Path="UnitTest.Sqlite/UnitTest.Sqlite.csproj" />
   </Folder>
   <Project Path="Delly.DBunny.Core/Delly.DBunny.Core.csproj" />
