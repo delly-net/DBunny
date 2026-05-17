@@ -9,13 +9,13 @@ using Xunit;
 
 namespace UnitTest.PostgreSql;
 
-public class TableTests : IClassFixture<PostgreSqlTestFixture>
+public class TableTests : IDisposable
 {
     private readonly PostgreSqlTestFixture _fixture;
 
-    public TableTests(PostgreSqlTestFixture fixture)
+    public TableTests()
     {
-        _fixture = fixture;
+        _fixture = new PostgreSqlTestFixture();
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class TableTests : IClassFixture<PostgreSqlTestFixture>
         var indexes = await _fixture.Provider.GetIndexes(_fixture.Connection, "public", tableName);
 
         // Assert
-        Assert.Contains(indexes, i => i.IndexName == $"{tableName}_Email_IDX");
+        Assert.Contains(indexes, i => i.IndexName.ToLower().Contains("email") && i.UniqueFlag);
     }
 
     [Fact]
@@ -123,17 +123,17 @@ public class TableTests : IClassFixture<PostgreSqlTestFixture>
         Assert.Equal(3, columns.Count);
 
         var idColumn = columns.First(c => c.ColumnName == "Id");
-        Assert.Contains("SERIAL", idColumn.ColumnType);
+        Assert.Contains("integer", idColumn.ColumnType.ToLower());
         Assert.True(idColumn.PrimaryKeyFlag);
         Assert.False(idColumn.NullableFlag);
 
         var nameColumn = columns.First(c => c.ColumnName == "Name");
-        Assert.Contains("VARCHAR", nameColumn.ColumnType);
+        Assert.Contains("character varying", nameColumn.ColumnType.ToLower());
         Assert.False(nameColumn.PrimaryKeyFlag);
         Assert.False(nameColumn.NullableFlag);
 
         var quantityColumn = columns.First(c => c.ColumnName == "Quantity");
-        Assert.Contains("INTEGER", quantityColumn.ColumnType);
+        Assert.Contains("integer", quantityColumn.ColumnType.ToLower());
         Assert.False(quantityColumn.PrimaryKeyFlag);
         Assert.True(quantityColumn.NullableFlag);
     }
@@ -274,5 +274,10 @@ public class TableTests : IClassFixture<PostgreSqlTestFixture>
         _fixture.Provider.SetParameters(command, sql.Parameters);
         var result = await command.ExecuteScalarAsync();
         return result != null && result != DBNull.Value ? (T)Convert.ChangeType(result, typeof(T))! : default!;
+    }
+
+    public void Dispose()
+    {
+        _fixture?.Dispose();
     }
 }

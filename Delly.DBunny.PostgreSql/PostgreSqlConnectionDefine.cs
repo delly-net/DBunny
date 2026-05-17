@@ -24,10 +24,6 @@ namespace Delly.DBunny.PostgreSql
         private const string POOLING_KEY = "Pooling";
         private const string MIN_POOL_SIZE_KEY = "Minimum Pool Size";
         private const string MAX_POOL_SIZE_KEY = "Maximum Pool Size";
-        private const string KEEPALIVE_KEY = "Keepalive";
-        private const string KEEPALIVE_IDLE_KEY = "Keepalive Idle";
-        private const string TIMEZONE_KEY = "Timezone";
-        private const string ENCODING_KEY = "Encoding";
 
         /// <summary>
         /// 数据库类型
@@ -66,9 +62,6 @@ namespace Delly.DBunny.PostgreSql
             Set(POOLING_KEY, "True");
             Set(MIN_POOL_SIZE_KEY, "0");
             Set(MAX_POOL_SIZE_KEY, "100");
-            Set(KEEPALIVE_KEY, "60");
-            Set(KEEPALIVE_IDLE_KEY, "10");
-            Set(ENCODING_KEY, "UTF8");
         }
 
         /// <summary>
@@ -245,66 +238,6 @@ namespace Delly.DBunny.PostgreSql
 #else
             set => Set(MAX_POOL_SIZE_KEY, value?.ToString());
 #endif
-        }
-
-        /// <summary>
-        /// Keepalive 间隔（秒）
-        /// </summary>
-#if NETSTANDARD2_0
-        public int Keepalive
-#else
-        public int? Keepalive
-#endif
-        {
-            get => Get(KEEPALIVE_KEY, 60);
-#if NETSTANDARD2_0
-            set => Set(KEEPALIVE_KEY, value.ToString());
-#else
-            set => Set(KEEPALIVE_KEY, value?.ToString());
-#endif
-        }
-
-        /// <summary>
-        /// Keepalive Idle 时间（秒）
-        /// </summary>
-#if NETSTANDARD2_0
-        public int KeepaliveIdle
-#else
-        public int? KeepaliveIdle
-#endif
-        {
-            get => Get(KEEPALIVE_IDLE_KEY, 10);
-#if NETSTANDARD2_0
-            set => Set(KEEPALIVE_IDLE_KEY, value.ToString());
-#else
-            set => Set(KEEPALIVE_IDLE_KEY, value?.ToString());
-#endif
-        }
-
-        /// <summary>
-        /// 时区
-        /// </summary>
-#if NETSTANDARD2_0
-        public string Timezone
-#else
-        public string? Timezone
-#endif
-        {
-            get => Get(TIMEZONE_KEY, "UTC");
-            set => Set(TIMEZONE_KEY, value);
-        }
-
-        /// <summary>
-        /// 编码
-        /// </summary>
-#if NETSTANDARD2_0
-        public string Encoding
-#else
-        public string? Encoding
-#endif
-        {
-            get => Get(ENCODING_KEY, "UTF8");
-            set => Set(ENCODING_KEY, value);
         }
 
         /// <summary>

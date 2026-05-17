@@ -10,13 +10,15 @@ using Xunit;
 
 namespace UnitTest.PostgreSql;
 
-public class CrudTests : IClassFixture<PostgreSqlTestFixture>
+public class CrudTests : IDisposable
 {
     private readonly PostgreSqlTestFixture _fixture;
+    private readonly string _testTableName;
 
-    public CrudTests(PostgreSqlTestFixture fixture)
+    public CrudTests()
     {
-        _fixture = fixture;
+        _fixture = new PostgreSqlTestFixture();
+        _testTableName = $"Users_{Guid.NewGuid():N}";
     }
 
     [Fact]
@@ -24,7 +26,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
     {
         // Arrange
         await CreateUsersTableAsync();
-        var insertSql = new Sqled("INSERT INTO \"Users\" (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+        var insertSql = new Sqled($"INSERT INTO \"{_testTableName}\" (\"Name\", \"Email\", \"Age\", \"CreatedAt\") VALUES (@name, @email, @age, @createdAt)")
             .Set("name", "John Doe")
             .Set("email", "john@example.com")
             .Set("age", 30)
@@ -32,7 +34,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
 
         // Act
         await ExecuteNonQueryAsync(_fixture.Connection, insertSql);
-        var count = await GetRecordCountAsync("Users");
+        var count = await GetRecordCountAsync();
 
         // Assert
         Assert.Equal(1, count);
@@ -48,7 +50,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("Alice", "alice@example.com", 25);
         await InsertUserAsync("Bob", "bob@example.com", 35);
         await InsertUserAsync("Charlie", "charlie@example.com", 28);
-        var count = await GetRecordCountAsync("Users");
+        var count = await GetRecordCountAsync();
 
         // Assert
         Assert.Equal(3, count);
@@ -62,7 +64,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("Jane Smith", "jane@example.com", 27);
 
         // Act
-        var selectSql = new Sqled("SELECT Name, Email, Age FROM \"Users\" WHERE Name = @name")
+        var selectSql = new Sqled($"SELECT \"Name\", \"Email\", \"Age\" FROM \"{_testTableName}\" WHERE \"Name\" = @name")
             .Set("name", "Jane Smith");
         var result = await ReadSingleAsync<UserRecord>(_fixture.Connection, selectSql);
 
@@ -83,7 +85,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("User3", "user3@example.com", 40);
 
         // Act
-        var selectSql = new Sqled("SELECT Name, Email, Age FROM \"Users\" ORDER BY Age");
+        var selectSql = new Sqled($"SELECT \"Name\", \"Email\", \"Age\" FROM \"{_testTableName}\" ORDER BY \"Age\"");
         var results = await ReadMultipleAsync<UserRecord>(_fixture.Connection, selectSql);
 
         // Assert
@@ -104,13 +106,13 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("UpdateMe", "old@example.com", 25);
 
         // Act
-        var updateSql = new Sqled("UPDATE \"Users\" SET Email = @newEmail, Age = @newAge WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE \"{_testTableName}\" SET \"Email\" = @newEmail, \"Age\" = @newAge WHERE \"Name\" = @name")
             .Set("newEmail", "new@example.com")
             .Set("newAge", 30)
             .Set("name", "UpdateMe");
         await ExecuteNonQueryAsync(_fixture.Connection, updateSql);
 
-        var selectSql = new Sqled("SELECT Email, Age FROM \"Users\" WHERE Name = @name").Set("name", "UpdateMe");
+        var selectSql = new Sqled($"SELECT \"Email\", \"Age\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "UpdateMe");
         var result = await ReadSingleAsync<UserRecord>(_fixture.Connection, selectSql);
 
         // Assert
@@ -127,14 +129,14 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("MultiUpdate", "multi@example.com", 20, new DateTime(2024, 1, 1));
 
         // Act
-        var updateSql = new Sqled("UPDATE \"Users\" SET Email = @email, Age = @age, CreatedAt = @createdAt WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE \"{_testTableName}\" SET \"Email\" = @email, \"Age\" = @age, \"CreatedAt\" = @createdAt WHERE \"Name\" = @name")
             .Set("email", "updated@example.com")
             .Set("age", 35)
             .Set("createdAt", new DateTime(2024, 12, 31, 23, 59, 59))
             .Set("name", "MultiUpdate");
         await ExecuteNonQueryAsync(_fixture.Connection, updateSql);
 
-        var selectSql = new Sqled("SELECT Email, Age FROM \"Users\" WHERE Name = @name").Set("name", "MultiUpdate");
+        var selectSql = new Sqled($"SELECT \"Email\", \"Age\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "MultiUpdate");
         var result = await ReadSingleAsync<UserRecord>(_fixture.Connection, selectSql);
 
         // Assert
@@ -151,12 +153,12 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("ExistingUser", "existing@example.com", 30);
 
         // Act
-        var updateSql = new Sqled("UPDATE \"Users\" SET Email = @email WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE \"{_testTableName}\" SET \"Email\" = @email WHERE \"Name\" = @name")
             .Set("email", "new@example.com")
             .Set("name", "NonExistingUser");
         var affectedRows = await ExecuteNonQueryWithResultAsync(_fixture.Connection, updateSql);
 
-        var selectSql = new Sqled("SELECT Email FROM \"Users\" WHERE Name = @name").Set("name", "ExistingUser");
+        var selectSql = new Sqled($"SELECT \"Email\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "ExistingUser");
         var result = await ReadSingleAsync<UserRecord>(_fixture.Connection, selectSql);
 
         // Assert
@@ -171,12 +173,12 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         // Arrange
         await CreateUsersTableAsync();
         await InsertUserAsync("ToDelete", "delete@example.com", 25);
-        var countBefore = await GetRecordCountAsync("Users");
+        var countBefore = await GetRecordCountAsync();
 
         // Act
-        var deleteSql = new Sqled("DELETE FROM \"Users\" WHERE Name = @name").Set("name", "ToDelete");
+        var deleteSql = new Sqled($"DELETE FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "ToDelete");
         await ExecuteNonQueryAsync(_fixture.Connection, deleteSql);
-        var countAfter = await GetRecordCountAsync("Users");
+        var countAfter = await GetRecordCountAsync();
 
         // Assert
         Assert.Equal(1, countBefore);
@@ -193,10 +195,10 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await InsertUserAsync("UserC", "c@example.com", 40);
 
         // Act
-        var deleteSql = new Sqled("DELETE FROM \"Users\" WHERE Age >= @minAge").Set("minAge", 30);
+        var deleteSql = new Sqled($"DELETE FROM \"{_testTableName}\" WHERE \"Age\" >= @minAge").Set("minAge", 30);
         await ExecuteNonQueryAsync(_fixture.Connection, deleteSql);
         var remainingRecords = await ReadMultipleAsync<UserRecord>(_fixture.Connection,
-            new Sqled("SELECT Name, Age FROM \"Users\" ORDER BY Name"));
+            new Sqled($"SELECT \"Name\", \"Age\" FROM \"{_testTableName}\" ORDER BY \"Name\""));
 
         // Assert
         Assert.Single(remainingRecords);
@@ -210,12 +212,12 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         // Arrange
         await CreateUsersTableAsync();
         await InsertUserAsync("KeepMe", "keep@example.com", 25);
-        var countBefore = await GetRecordCountAsync("Users");
+        var countBefore = await GetRecordCountAsync();
 
         // Act
-        var deleteSql = new Sqled("DELETE FROM \"Users\" WHERE Name = @name").Set("name", "NonExisting");
+        var deleteSql = new Sqled($"DELETE FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "NonExisting");
         var affectedRows = await ExecuteNonQueryWithResultAsync(_fixture.Connection, deleteSql);
-        var countAfter = await GetRecordCountAsync("Users");
+        var countAfter = await GetRecordCountAsync();
 
         // Assert
         Assert.Equal(0, affectedRows);
@@ -228,35 +230,35 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
     {
         // Arrange & Act - Create
         await CreateUsersTableAsync();
-        var initialCount = await GetRecordCountAsync("Users");
+        var initialCount = await GetRecordCountAsync();
         Assert.Equal(0, initialCount);
 
         // Insert
         await InsertUserAsync("WorkflowUser", "workflow@example.com", 28);
-        var countAfterInsert = await GetRecordCountAsync("Users");
+        var countAfterInsert = await GetRecordCountAsync();
         Assert.Equal(1, countAfterInsert);
 
         // Read
         var readResult = await ReadSingleAsync<UserRecord>(_fixture.Connection,
-            new Sqled("SELECT Name, Email, Age FROM \"Users\" WHERE Name = @name").Set("name", "WorkflowUser"));
+            new Sqled($"SELECT \"Name\", \"Email\", \"Age\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "WorkflowUser"));
         Assert.NotNull(readResult);
         Assert.Equal("workflow@example.com", readResult.Email);
         Assert.Equal(28, readResult.Age);
 
         // Update
-        var updateSql = new Sqled("UPDATE \"Users\" SET Age = @newAge WHERE Name = @name")
+        var updateSql = new Sqled($"UPDATE \"{_testTableName}\" SET \"Age\" = @newAge WHERE \"Name\" = @name")
             .Set("newAge", 35)
             .Set("name", "WorkflowUser");
         await ExecuteNonQueryAsync(_fixture.Connection, updateSql);
         var updatedResult = await ReadSingleAsync<UserRecord>(_fixture.Connection,
-            new Sqled("SELECT Age FROM \"Users\" WHERE Name = @name").Set("name", "WorkflowUser"));
+            new Sqled($"SELECT \"Age\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "WorkflowUser"));
         Assert.NotNull(updatedResult);
         Assert.Equal(35, updatedResult.Age);
 
         // Delete
-        var deleteSql = new Sqled("DELETE FROM \"Users\" WHERE Name = @name").Set("name", "WorkflowUser");
+        var deleteSql = new Sqled($"DELETE FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "WorkflowUser");
         await ExecuteNonQueryAsync(_fixture.Connection, deleteSql);
-        var finalCount = await GetRecordCountAsync("Users");
+        var finalCount = await GetRecordCountAsync();
         Assert.Equal(0, finalCount);
     }
 
@@ -271,7 +273,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         // Act
         await InsertUserAsync(specialName, specialEmail, 45);
         var result = await ReadSingleAsync<UserRecord>(_fixture.Connection,
-            new Sqled("SELECT Name, Email FROM \"Users\" WHERE Name = @name").Set("name", specialName));
+            new Sqled($"SELECT \"Name\", \"Email\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", specialName));
 
         // Assert
         Assert.NotNull(result);
@@ -286,14 +288,14 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await CreateUsersTableAsync();
 
         // Act
-        var insertSql = new Sqled("INSERT INTO \"Users\" (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+        var insertSql = new Sqled($"INSERT INTO \"{_testTableName}\" (\"Name\", \"Email\", \"Age\", \"CreatedAt\") VALUES (@name, @email, @age, @createdAt)")
             .Set("name", "NullAgeUser")
             .Set("email", "nullage@example.com")
             .Set("age", DBNull.Value)
             .Set("createdAt", DateTime.UtcNow);
         await ExecuteNonQueryAsync(_fixture.Connection, insertSql);
 
-        var selectSql = new Sqled("SELECT Age FROM \"Users\" WHERE Name = @name").Set("name", "NullAgeUser");
+        var selectSql = new Sqled($"SELECT \"Age\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "NullAgeUser");
         var result = await ExecuteScalarAsync<object?>(_fixture.Connection, selectSql);
 
         // Assert
@@ -309,7 +311,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
 
         // Act
         await InsertUserAsync("DateTimeUser", "datetime@example.com", 30, testDateTime);
-        var selectSql = new Sqled("SELECT CreatedAt FROM \"Users\" WHERE Name = @name").Set("name", "DateTimeUser");
+        var selectSql = new Sqled($"SELECT \"CreatedAt\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", "DateTimeUser");
         var result = await ExecuteScalarAsync<DateTime>(_fixture.Connection, selectSql);
 
         // Assert
@@ -339,7 +341,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         // Act
         await InsertUserAsync(longName, longEmail, 50);
         var result = await ReadSingleAsync<UserRecord>(_fixture.Connection,
-            new Sqled("SELECT Name, Email FROM \"Users\" WHERE Name = @name").Set("name", longName));
+            new Sqled($"SELECT \"Name\", \"Email\" FROM \"{_testTableName}\" WHERE \"Name\" = @name").Set("name", longName));
 
         // Assert
         Assert.NotNull(result);
@@ -368,7 +370,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
             throw;
         }
 
-        var count = await GetRecordCountAsync("Users");
+        var count = await GetRecordCountAsync();
 
         // Assert
         Assert.Equal(3, count);
@@ -380,7 +382,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         // Arrange
         await CreateUsersTableAsync();
         await InsertUserAsync("Existing", "existing@example.com", 25);
-        var countBefore = await GetRecordCountAsync("Users");
+        var countBefore = await GetRecordCountAsync();
 
         // Act
         using var transaction = _fixture.Connection.BeginTransaction();
@@ -394,7 +396,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
             transaction.Rollback();
         }
 
-        var countAfter = await GetRecordCountAsync("Users");
+        var countAfter = await GetRecordCountAsync();
 
         // Assert
         Assert.Equal(countBefore, countAfter);
@@ -403,7 +405,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
     private async Task CreateUsersTableAsync()
     {
         var sql = new Sqled();
-        sql.Builder.AppendLine("CREATE TABLE \"Users\"(");
+        sql.Builder.AppendLine($"CREATE TABLE \"{_testTableName}\"(");
         sql.Builder.Append("    \"Id\" SERIAL NOT NULL PRIMARY KEY,");
         sql.Builder.Append("    \"Name\" VARCHAR(100) NOT NULL,");
         sql.Builder.Append("    \"Email\" VARCHAR(255) NOT NULL,");
@@ -415,7 +417,7 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
 
     private async Task InsertUserAsync(string name, string email, int? age, DateTime? createdAt = null)
     {
-        var insertSql = new Sqled("INSERT INTO \"Users\" (Name, Email, Age, CreatedAt) VALUES (@name, @email, @age, @createdAt)")
+        var insertSql = new Sqled($"INSERT INTO \"{_testTableName}\" (\"Name\", \"Email\", \"Age\", \"CreatedAt\") VALUES (@name, @email, @age, @createdAt)")
             .Set("name", name)
             .Set("email", email)
             .Set("age", age.HasValue ? age.Value : DBNull.Value)
@@ -423,9 +425,9 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         await ExecuteNonQueryAsync(_fixture.Connection, insertSql);
     }
 
-    private async Task<int> GetRecordCountAsync(string tableName)
+    private async Task<int> GetRecordCountAsync()
     {
-        var sql = new Sqled($"SELECT COUNT(*) FROM \"{tableName}\"");
+        var sql = new Sqled($"SELECT COUNT(*) FROM \"{_testTableName}\"");
         return await ExecuteScalarAsync<int>(_fixture.Connection, sql);
     }
 
@@ -471,13 +473,19 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
             {
                 var item = new T();
                 var properties = typeof(T).GetProperties();
+                var schemaTable = reader.GetColumnSchema();
                 foreach (var prop in properties)
                 {
-                    var ordinal = reader.GetOrdinal(prop.Name);
-                    if (!reader.IsDBNull(ordinal))
+                    var column = schemaTable.Cast<System.Data.Common.DbColumn>()
+                        .FirstOrDefault(col => string.Equals(col.ColumnName, prop.Name, StringComparison.OrdinalIgnoreCase));
+                    if (column != null)
                     {
-                        var value = reader[ordinal];
-                        prop.SetValue(item, value is DBNull ? null : value);
+                        var ordinal = reader.GetOrdinal(column.ColumnName);
+                        if (!reader.IsDBNull(ordinal))
+                        {
+                            var value = reader[ordinal];
+                            prop.SetValue(item, value is DBNull ? null : value);
+                        }
                     }
                 }
                 results.Add(item);
@@ -491,5 +499,10 @@ public class CrudTests : IClassFixture<PostgreSqlTestFixture>
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public int Age { get; set; }
+    }
+
+    public void Dispose()
+    {
+        _fixture?.Dispose();
     }
 }

@@ -148,41 +148,5 @@ namespace Delly.DBunny.PostgreSql
             define.MaxPoolSize = maxPoolSize;
             return define;
         }
-
-        /// <summary>
-        /// 设置 Keepalive 间隔
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="keepalive">Keepalive 间隔（秒）</param>
-        /// <returns>当前实例</returns>
-        public static PostgreSqlConnectionDefine WithKeepalive(this PostgreSqlConnectionDefine define, int keepalive)
-        {
-            define.Keepalive = keepalive;
-            return define;
-        }
-
-        /// <summary>
-        /// 设置 Keepalive Idle 时间
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="keepaliveIdle">Keepalive Idle 时间（秒）</param>
-        /// <returns>当前实例</returns>
-        public static PostgreSqlConnectionDefine WithKeepaliveIdle(this PostgreSqlConnectionDefine define, int keepaliveIdle)
-        {
-            define.KeepaliveIdle = keepaliveIdle;
-            return define;
-        }
-
-        /// <summary>
-        /// 设置时区
-        /// </summary>
-        /// <param name="define">连接定义</param>
-        /// <param name="timezone">时区</param>
-        /// <returns>当前实例</returns>
-        public static PostgreSqlConnectionDefine WithTimezone(this PostgreSqlConnectionDefine define, string timezone)
-        {
-            define.Timezone = timezone;
-            return define;
-        }
     }
 }
