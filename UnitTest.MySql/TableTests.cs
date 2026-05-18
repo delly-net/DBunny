@@ -57,7 +57,7 @@ public class TableTests : IAsyncLifetime
     {
         _connection.Open();
         // 创建测试数据库 (MySQL中schema就是database)
-        var createDatabaseSql = _provider.SqlProvider.CreateDatabase(_testSchema, null);
+        var createDatabaseSql = _provider.SqlProvider.CreateDatabase(_testSchema, null!);
         await ExecuteNonQueryAsync(_connection, createDatabaseSql);
 
         // 切换到测试数据库
@@ -89,7 +89,7 @@ public class TableTests : IAsyncLifetime
     public async Task CreateSchema_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null!));
     }
 
     [Fact]
@@ -596,7 +596,7 @@ public class TableTests : IAsyncLifetime
     public void SqlProvider_CreateSchema_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null!));
     }
 
     [Fact]

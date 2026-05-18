@@ -136,7 +136,8 @@ namespace Delly.DBunny.PostgreSql
             {
                 if (options.TryGetValue("owner", out var owner) && owner != null)
                 {
-                    sql += $" OWNER {GetSpecialName(owner.ToString())}";
+                    var ownerName = owner.ToString() ?? string.Empty;
+                    sql += $" OWNER {GetSpecialName(ownerName)}";
                 }
                 if (options.TryGetValue("encoding", out var encoding) && encoding != null)
                 {
@@ -144,7 +145,8 @@ namespace Delly.DBunny.PostgreSql
                 }
                 if (options.TryGetValue("template", out var template) && template != null)
                 {
-                    sql += $" TEMPLATE {GetSpecialName(template.ToString())}";
+                    var templateName = template.ToString() ?? string.Empty;
+                    sql += $" TEMPLATE {GetSpecialName(templateName)}";
                 }
             }
             return sql + ";";
@@ -186,7 +188,8 @@ namespace Delly.DBunny.PostgreSql
             {
                 if (options.TryGetValue("authorization", out var authorization) && authorization != null)
                 {
-                    sql += $" AUTHORIZATION {GetSpecialName(authorization.ToString())}";
+                    var authName = authorization.ToString() ?? string.Empty;
+                    sql += $" AUTHORIZATION {GetSpecialName(authName)}";
                 }
             }
             return sql + ";";

@@ -8,10 +8,12 @@ using Delly.DBunny.MsAccess;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Runtime.Versioning;
 using Xunit;
 
 namespace UnitTest.MsAccess;
 
+[SupportedOSPlatform("windows")]
 public class TableTests : IDisposable
 {
     private readonly IDbProvider _provider;
@@ -62,7 +64,7 @@ public class TableTests : IDisposable
             var catalogType = Type.GetTypeFromProgID("ADOX.Catalog");
             if (catalogType != null)
             {
-                dynamic catalog = Activator.CreateInstance(catalogType);
+                dynamic catalog = Activator.CreateInstance(catalogType) ?? throw new InvalidOperationException("Failed to create ADOX.Catalog instance.");
                 // 使用完整路径，避免路径中的空格或特殊字符
                 string connectionString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=\"{_testDbPath}\";Jet OLEDB:Engine Type=5;";
                 catalog.Create(connectionString);
@@ -447,7 +449,7 @@ public class TableTests : IDisposable
     public void SqlProvider_CreateDatabase_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null!));
     }
 
     [Fact]
@@ -468,7 +470,7 @@ public class TableTests : IDisposable
     public void SqlProvider_CreateSchema_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null!));
     }
 
     [Fact]

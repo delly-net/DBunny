@@ -172,17 +172,17 @@ namespace Delly.DBunny.Oracle
 
             if (options != null)
             {
-                if (options.TryGetValue("password", out var pwd))
+                if (options.TryGetValue("password", out var pwd) && pwd != null)
                 {
-                    password = pwd.ToString();
+                    password = pwd.ToString() ?? "password";
                 }
-                if (options.TryGetValue("tablespace", out var ts))
+                if (options.TryGetValue("tablespace", out var ts) && ts != null)
                 {
-                    tablespace = ts.ToString();
+                    tablespace = ts.ToString() ?? "USERS";
                 }
-                if (options.TryGetValue("temp_tablespace", out var tts))
+                if (options.TryGetValue("temp_tablespace", out var tts) && tts != null)
                 {
-                    tempTablespace = tts.ToString();
+                    tempTablespace = tts.ToString() ?? "TEMP";
                 }
             }
 

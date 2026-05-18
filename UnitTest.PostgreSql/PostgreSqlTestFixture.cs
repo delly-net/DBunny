@@ -57,17 +57,17 @@ public class PostgreSqlTestFixture : IDisposable
     {
         // 先删除已存在的测试数据库
         var dropDbSql = $"DROP DATABASE IF EXISTS \"{_testDatabaseName}\";";
-        using var dropCommand = Provider.GetDbCommand(_connection);
+        using var dropCommand = Provider.GetDbCommand(_connection!);
         dropCommand.CommandText = dropDbSql;
         try { dropCommand.ExecuteNonQuery(); } catch { }
 
         var createDbSql = $"CREATE DATABASE \"{_testDatabaseName}\";";
-        using var command = Provider.GetDbCommand(_connection);
+        using var command = Provider.GetDbCommand(_connection!);
         command.CommandText = createDbSql;
         command.ExecuteNonQuery();
 
         // 关闭当前连接，切换到新数据库
-        _connection.Close();
+        _connection!.Close();
 
         // 更新连接字符串使用新数据库
         var newConnectionString = ConnectionDescriptor.ConnectionString.Replace(

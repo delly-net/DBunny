@@ -187,7 +187,7 @@ public class TableTests : IDisposable
         var schemaName = "test_schema_" + Guid.NewGuid().ToString("N");
 
         // Act
-        var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null);
+        var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null!);
         await ExecuteNonQueryAsync(_fixture.Connection, createSchemaSql);
         var schemas = await _fixture.Provider.GetSchemas(_fixture.Connection);
 
@@ -465,7 +465,7 @@ public class TableTests : IDisposable
         try
         {
             // Create schema first
-            var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null);
+            var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null!);
             await ExecuteNonQueryAsync(_fixture.Connection, createSchemaSql);
 
             // Act
@@ -473,7 +473,7 @@ public class TableTests : IDisposable
             await ExecuteNonQueryAsync(_fixture.Connection, dropSchemaSql);
 
             // Verify schema is dropped by trying to create it again
-            var createAgainSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null);
+            var createAgainSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null!);
             await ExecuteNonQueryAsync(_fixture.Connection, createAgainSql);
 
             // Cleanup
@@ -484,7 +484,7 @@ public class TableTests : IDisposable
         }
         catch
         {
-            Assert.True(false, "Schema operations failed");
+            Assert.Fail("Schema operations failed");
         }
     }
 

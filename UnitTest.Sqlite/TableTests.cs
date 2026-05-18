@@ -400,7 +400,7 @@ public class TableTests : IDisposable
     public void SqlProvider_CreateDatabase_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null!));
     }
 
     [Fact]
@@ -421,7 +421,7 @@ public class TableTests : IDisposable
     public void SqlProvider_CreateSchema_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateSchema("testschema", null!));
     }
 
     [Fact]

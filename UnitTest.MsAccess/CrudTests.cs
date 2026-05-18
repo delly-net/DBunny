@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Runtime.Versioning;
 using Delly.DBunny;
 using Delly.DBunny.Connecting;
 using Delly.DBunny.Connecting.Extension;
@@ -12,6 +13,7 @@ using Xunit;
 
 namespace UnitTest.MsAccess;
 
+[SupportedOSPlatform("windows")]
 public class CrudTests : IDisposable
 {
     private readonly IDbProvider _provider;
@@ -67,7 +69,7 @@ public class CrudTests : IDisposable
             var catalogType = Type.GetTypeFromProgID("ADOX.Catalog");
             if (catalogType != null)
             {
-                dynamic catalog = Activator.CreateInstance(catalogType);
+                dynamic catalog = Activator.CreateInstance(catalogType) ?? throw new InvalidOperationException("Failed to create ADOX.Catalog instance.");
                 // 使用完整路径，避免路径中的空格或特殊字符
                 string connectionString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=\"{_testDbPath}\";Jet OLEDB:Engine Type=5;";
                 catalog.Create(connectionString);

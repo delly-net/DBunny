@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.OleDb;
+#if !NETSTANDARD2_0
+using System.Runtime.Versioning;
+#endif
 using System.Threading.Tasks;
 
 namespace Delly.DBunny.MsAccess
@@ -11,6 +14,9 @@ namespace Delly.DBunny.MsAccess
     /// <summary>
     /// Microsoft Access 提供程序
     /// </summary>
+#if !NETSTANDARD2_0
+    [SupportedOSPlatform("windows")]
+#endif
     public sealed class MsAccessProvider : IDbProvider
     {
         private static readonly Dictionary<int, string> OleDbTypeMap = new Dictionary<int, string>()
@@ -138,12 +144,12 @@ namespace Delly.DBunny.MsAccess
 
             foreach (DataRow row in dataTable.Rows)
             {
-                var tableType = row["TABLE_TYPE"].ToString();
-                var tableName = row["TABLE_NAME"].ToString();
+                var tableType = row["TABLE_TYPE"]?.ToString();
+                var tableName = row["TABLE_NAME"]?.ToString();
 
                 // 只返回 TABLE 类型的表，跳过系统表和视图
-                if (tableType.Equals("TABLE", StringComparison.OrdinalIgnoreCase) &&
-                    !tableName.StartsWith("MSys", StringComparison.OrdinalIgnoreCase) &&
+                if (tableType != null && tableType.Equals("TABLE", StringComparison.OrdinalIgnoreCase) &&
+                    tableName != null && !tableName.StartsWith("MSys", StringComparison.OrdinalIgnoreCase) &&
                     !tableName.StartsWith("~", StringComparison.OrdinalIgnoreCase))
                 {
                     tables.Add(new DbTableDesciptor
@@ -169,7 +175,11 @@ namespace Delly.DBunny.MsAccess
 
             // 使用 GetSchema 获取列信息
             var oleDbConnection = (OleDbConnection)connection;
+#if NETSTANDARD2_0
             string[] restrictions = new string[] { null, null, table };
+#else
+            string?[] restrictions = new string?[] { null, null, table };
+#endif
             var dataTable = oleDbConnection.GetSchema("Columns", restrictions);
 
             foreach (DataRow row in dataTable.Rows)
@@ -217,7 +227,7 @@ namespace Delly.DBunny.MsAccess
 #if NETSTANDARD2_0
             string[] restrictions = new string[] { null, null, null, null, table };
 #else
-            var restrictions = new string?[] { null, null, null, null, table };
+            string?[] restrictions = new string?[] { null, null, null, null, table };
 #endif
             var dataTable = oleDbConnection.GetSchema("Indexes", restrictions);
 
@@ -229,7 +239,7 @@ namespace Delly.DBunny.MsAccess
                 {
                     TableName = table,
                     IndexName = indexName,
-                    UniqueFlag = row["UNIQUE"] != null && row["UNIQUE"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase)
+                    UniqueFlag = row["UNIQUE"]?.ToString()?.Equals("true", StringComparison.OrdinalIgnoreCase) == true
                 });
             }
 

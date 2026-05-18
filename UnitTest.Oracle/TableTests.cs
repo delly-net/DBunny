@@ -542,7 +542,7 @@ public class TableTests : IAsyncLifetime
     public void SqlProvider_CreateDatabase_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.CreateDatabase("testdb", null!));
     }
 
     [Fact]
