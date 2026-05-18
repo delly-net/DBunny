@@ -4,9 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Delly.DBunny;
 
-namespace Delly.DBunny.Connecting
+namespace Delly.DBunny.Core.Connecting
 {
     /// <summary>
     /// 基础连接定义

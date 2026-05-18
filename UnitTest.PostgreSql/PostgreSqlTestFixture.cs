@@ -1,9 +1,9 @@
-using Delly.DBunny;
 using Delly.DBunny.Connecting;
 using Delly.DBunny.Connecting.Extension;
+using Delly.DBunny.Core;
+using Delly.DBunny.Core.Providing.Extension;
 using Delly.DBunny.PostgreSql;
 using Delly.DBunny.Providing;
-using Delly.DBunny.Providing.Extension;
 using System.Data.Common;
 
 namespace UnitTest.PostgreSql;

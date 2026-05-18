@@ -1,4 +1,4 @@
-﻿namespace Delly.DBunny
+﻿namespace Delly.DBunny.Core
 {
     /// <summary>
     /// 数据库连接 描述器

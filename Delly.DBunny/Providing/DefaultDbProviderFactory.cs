@@ -1,4 +1,4 @@
-﻿using Delly.DBunny;
+﻿using Delly.DBunny.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;

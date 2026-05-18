@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Delly.DBunny
+namespace Delly.DBunny.Core
 {
     /// <summary>
     /// 数据库连接定义

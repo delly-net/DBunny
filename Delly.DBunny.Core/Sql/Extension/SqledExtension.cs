@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Delly.DBunny.Sql.Extension
+namespace Delly.DBunny.Core.Sql.Extension
 {
     /// <summary>
     /// Sql集 扩展

@@ -14,4 +14,5 @@
   <Project Path="Delly.DBunny.PostgreSql/Delly.DBunny.PostgreSql.csproj" />
   <Project Path="Delly.DBunny.Sqlite/Delly.DBunny.Sqlite.csproj" Id="a737013f-61a0-45c4-bb76-1416c7794186" />
   <Project Path="Delly.DBunny.SqlServer/Delly.DBunny.SqlServer.csproj" />
+  <Project Path="Delly.DBunny/Delly.DBunny.csproj" Id="96d18de6-6d24-41a1-a2e6-70ac76efff42" />
 </Solution>

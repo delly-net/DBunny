@@ -1,4 +1,5 @@
-﻿using Delly.DBunny.Providing.Extension;
+﻿using Delly.DBunny.Core;
+using Delly.DBunny.Core.Providing.Extension;
 using System;
 using System.Collections.Generic;
 using System.Data;

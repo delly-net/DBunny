@@ -1,10 +1,10 @@
-using Delly.DBunny;
 using Delly.DBunny.Connecting;
 using Delly.DBunny.Connecting.Extension;
-using Delly.DBunny.Providing;
-using Delly.DBunny.Providing.Extension;
-using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Core;
+using Delly.DBunny.Core.Providing.Extension;
+using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.Oracle;
+using Delly.DBunny.Providing;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;

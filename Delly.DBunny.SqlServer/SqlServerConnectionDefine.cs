@@ -1,4 +1,4 @@
-using Delly.DBunny.Connecting;
+using Delly.DBunny.Core.Connecting;
 using System;
 
 namespace Delly.DBunny.SqlServer

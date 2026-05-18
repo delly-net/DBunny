@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Delly.DBunny.Core\Delly.DBunny.Core.csproj" />
+		<ProjectReference Include="..\Delly.DBunny\Delly.DBunny.csproj" />
 		<ProjectReference Include="..\Delly.DBunny.SqlServer\Delly.DBunny.SqlServer.csproj" />
 	</ItemGroup>
 

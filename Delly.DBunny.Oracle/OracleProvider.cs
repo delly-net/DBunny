@@ -1,10 +1,11 @@
-using Delly.DBunny.Providing.Extension;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using Oracle.ManagedDataAccess.Client;
 using System.Threading.Tasks;
+using Delly.DBunny.Core.Providing.Extension;
+using Delly.DBunny.Core;
 
 namespace Delly.DBunny.Oracle
 {

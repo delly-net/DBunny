@@ -1,4 +1,6 @@
-﻿namespace Delly.DBunny
+﻿using Delly.DBunny.Core;
+
+namespace Delly.DBunny
 {
     /// <summary>
     /// 主机数据库上下文配置工厂

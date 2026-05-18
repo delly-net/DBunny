@@ -1,11 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
 		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
 		<Version>2026.5.3</Version>
 		<Authors>Delly.Net</Authors>
-		<Description>Core for Delly.DBunny</Description>
+		<Description>A lightweight .NET database abstraction layer that provides a unified API for working with multiple database types. DBunny uses a provider pattern to enable database-specific implementations while maintaining a common interface.</Description>
 		<PackageIcon>Bunny_128.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -30,10 +30,14 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
+		<None Include="..\README.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Delly.DBunny.Core\Delly.DBunny.Core.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Delly.DBunny.Providing.Extension
+namespace Delly.DBunny.Core.Providing.Extension
 {
     /// <summary>
     /// 数据库提供程序 扩展

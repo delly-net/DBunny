@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Delly.DBunny
+namespace Delly.DBunny.Core
 {
     /// <summary>
     /// Sql 提供程序

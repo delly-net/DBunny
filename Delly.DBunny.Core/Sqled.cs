@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace Delly.DBunny
+namespace Delly.DBunny.Core
 {
     /// <summary>
     /// Sql对象

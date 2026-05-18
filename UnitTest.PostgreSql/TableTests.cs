@@ -1,8 +1,8 @@
-using Delly.DBunny;
 using Delly.DBunny.Connecting;
 using Delly.DBunny.Connecting.Extension;
+using Delly.DBunny.Core;
+using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.PostgreSql;
-using Delly.DBunny.Sql.Extension;
 using System.Data.Common;
 using System.Linq;
 using Xunit;
