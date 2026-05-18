@@ -45,7 +45,7 @@ public class DbWorkTests : IDisposable
         _connectionFactory = new DefaultDbConnectionFactory(_connectionDescriptor);
         _providerFactory = new DefaultDbProviderFactory(new SqliteProvider());
         _filterFactory = new DefaultDbFilterFactory();
-        _manager = new DefaultDbWorkManager(_connectionFactory, _filterFactory, _providerFactory);
+        _manager = new DefaultDbManager(_connectionFactory, _filterFactory, _providerFactory);
     }
 
     #region DefaultDbWork Properties Tests
@@ -100,7 +100,7 @@ public class DbWorkTests : IDisposable
         var filter1 = new TestDbFilter("Filter1");
         var filter2 = new TestDbFilter("Filter2");
         var filterFactory = new DefaultDbFilterFactory(filter1, filter2);
-        var managerWithFilters = new DefaultDbWorkManager(_connectionFactory, filterFactory, _providerFactory);
+        var managerWithFilters = new DefaultDbManager(_connectionFactory, filterFactory, _providerFactory);
 
         // Act
         using var work = managerWithFilters.CreateWork();
@@ -222,7 +222,7 @@ public class DbWorkTests : IDisposable
         // Arrange
         var filter = new TestDbFilter("TestFilter") { SqlLoadingTransform = s => new Sqled(s.Sql + " AND Active = 1") };
         var filterFactory = new DefaultDbFilterFactory(filter);
-        var managerWithFilter = new DefaultDbWorkManager(_connectionFactory, filterFactory, _providerFactory);
+        var managerWithFilter = new DefaultDbManager(_connectionFactory, filterFactory, _providerFactory);
         using var work = managerWithFilter.CreateWork();
         using var connection = work.Connect();
         var sql = new Sqled("SELECT * FROM Test");
@@ -248,7 +248,7 @@ public class DbWorkTests : IDisposable
             }
         };
         var filterFactory = new DefaultDbFilterFactory(filter);
-        var managerWithFilter = new DefaultDbWorkManager(_connectionFactory, filterFactory, _providerFactory);
+        var managerWithFilter = new DefaultDbManager(_connectionFactory, filterFactory, _providerFactory);
         using var work = managerWithFilter.CreateWork();
         using var connection = work.Connect();
         var sql = new Sqled("SELECT 1");
@@ -274,7 +274,7 @@ public class DbWorkTests : IDisposable
             }
         };
         var filterFactory = new DefaultDbFilterFactory(filter);
-        var managerWithFilter = new DefaultDbWorkManager(_connectionFactory, filterFactory, _providerFactory);
+        var managerWithFilter = new DefaultDbManager(_connectionFactory, filterFactory, _providerFactory);
         using var work = managerWithFilter.CreateWork();
         using var connection = work.Connect();
         var sql = new Sqled("SELECT 1");
@@ -294,7 +294,7 @@ public class DbWorkTests : IDisposable
         var filter1 = new TestDbFilter("Filter1") { SqlLoadingTransform = s => new Sqled(s.Sql + " AND A = 1") };
         var filter2 = new TestDbFilter("Filter2") { SqlLoadingTransform = s => new Sqled(s.Sql + " AND B = 2") };
         var filterFactory = new DefaultDbFilterFactory(filter1, filter2);
-        var managerWithFilter = new DefaultDbWorkManager(_connectionFactory, filterFactory, _providerFactory);
+        var managerWithFilter = new DefaultDbManager(_connectionFactory, filterFactory, _providerFactory);
         using var work = managerWithFilter.CreateWork();
         using var connection = work.Connect();
         var sql = new Sqled("SELECT * FROM Test");
@@ -485,7 +485,7 @@ public class DbWorkTests : IDisposable
     public void Dispose_ShouldCallReleaseWorkOnManager()
     {
         // Arrange
-        var managerWithFilter = new DefaultDbWorkManager(_connectionFactory, _filterFactory, _providerFactory);
+        var managerWithFilter = new DefaultDbManager(_connectionFactory, _filterFactory, _providerFactory);
 
         // Act - Create work via manager which sets it as current
         using (var work = managerWithFilter.CreateWork("Default"))

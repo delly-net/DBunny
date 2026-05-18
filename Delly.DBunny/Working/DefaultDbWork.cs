@@ -11,7 +11,7 @@ namespace Delly.DBunny.Working
     /// <summary>
     /// 简单的数据库作业
     /// </summary>
-    public sealed class DefaultDbWork : IDisposable, IDbWork
+    public class DefaultDbWork : IDisposable, IDbWork
     {
 
         private readonly List<Sqled> _sqleds;

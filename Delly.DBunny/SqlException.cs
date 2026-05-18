@@ -10,7 +10,7 @@ namespace Delly.DBunny
     /// <summary>
     /// Sql异常
     /// </summary>
-    public sealed class SqlException : Exception
+    public class SqlException : Exception
     {
         /// <summary>
         /// Sql异常

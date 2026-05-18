@@ -8,7 +8,7 @@ namespace Delly.DBunny.Working
     /// <summary>
     /// 数据库作业管理器
     /// </summary>
-    public sealed class DefaultDbWorkManager : IDbManager
+    public class DefaultDbManager : IDbManager
     {
         // 异步对象
         private static readonly AsyncLocal<DbWorkWrapper> _asyncLocal = new AsyncLocal<DbWorkWrapper>();
@@ -22,7 +22,7 @@ namespace Delly.DBunny.Working
         /// <summary>
         /// 数据库作业管理器
         /// </summary>
-        public DefaultDbWorkManager(
+        public DefaultDbManager(
             IDbConnectionFactory connectionFactory,
             IDbFilterFactory filterFactory,
             IDbProviderFactory providerFactory

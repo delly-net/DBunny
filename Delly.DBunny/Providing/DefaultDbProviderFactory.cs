@@ -11,7 +11,7 @@ namespace Delly.DBunny.Providing
     /// <summary>
     /// 默认数据库工厂
     /// </summary>
-    public sealed class DefaultDbProviderFactory : IDbProviderFactory
+    public class DefaultDbProviderFactory : IDbProviderFactory
     {
         private readonly Dictionary<string, IDbProvider> _providers;
 
