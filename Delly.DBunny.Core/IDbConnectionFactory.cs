@@ -8,13 +8,14 @@
         /// <summary>
         /// 获取主机数据库上下文配置
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">连接名称</param>
+        /// <returns>连接描述符</returns>
         DbConnectionDescriptor GetConnection(string name);
 
         /// <summary>
         /// 默认主机数据库上下文配置
         /// </summary>
+        /// <returns>默认连接描述符</returns>
         DbConnectionDescriptor GetDefaultConnection();
     }
 }

@@ -23,8 +23,8 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取特有名称
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">名称</param>
+        /// <returns>特殊格式名称（双引号包裹）</returns>
         public string GetSpecialName(string name)
         {
             return "\"" + name + "\"";
@@ -33,10 +33,10 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取特有类型名称
         /// </summary>
-        /// <param name="typeCode"></param>
-        /// <param name="length"></param>
-        /// <param name="precision"></param>
-        /// <returns></returns>
+        /// <param name="typeCode">类型代码</param>
+        /// <param name="length">长度</param>
+        /// <param name="precision">精度</param>
+        /// <returns>PostgreSQL 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
         public string GetSpecialTypeName(TypeCode typeCode, int length = 0, int precision = 0)
         {
@@ -79,10 +79,10 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取特有类型名称
         /// </summary>
-        /// <param name="columnType"></param>
-        /// <param name="length"></param>
-        /// <param name="precision"></param>
-        /// <returns></returns>
+        /// <param name="columnType">列类型</param>
+        /// <param name="length">长度</param>
+        /// <param name="precision">精度</param>
+        /// <returns>PostgreSQL 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
         public string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0)
         {
@@ -117,7 +117,7 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取所有 数据库
         /// </summary>
-        /// <returns></returns>
+        /// <returns>获取数据库的 SQL 命令</returns>
         public Sqled GetDatabases()
         {
             return "SELECT datname FROM pg_database WHERE datistemplate = false;";
@@ -126,9 +126,9 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 创建 数据库
         /// </summary>
-        /// <param name="database"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
+        /// <param name="database">数据库名称</param>
+        /// <param name="options">配置选项（owner, encoding, template）</param>
+        /// <returns>创建数据库的 SQL 命令</returns>
         public Sqled CreateDatabase(string database, IDictionary<string, object> options)
         {
             var sql = $"CREATE DATABASE {GetSpecialName(database)}";
@@ -153,8 +153,8 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 删除 数据库
         /// </summary>
-        /// <param name="database"></param>
-        /// <returns></returns>
+        /// <param name="database">数据库名称</param>
+        /// <returns>删除数据库的 SQL 命令</returns>
         public Sqled DropDatabase(string database)
         {
             return $"DROP DATABASE IF EXISTS {GetSpecialName(database)};";
@@ -167,7 +167,7 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取所有 Schema
         /// </summary>
-        /// <returns></returns>
+        /// <returns>获取 Schema 的 SQL 命令</returns>
         public Sqled GetSchemas()
         {
             return "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('pg_catalog', 'information_schema')";
@@ -176,9 +176,9 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 创建 Schema
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="options">配置选项（authorization）</param>
+        /// <returns>创建 Schema 的 SQL 命令</returns>
         public Sqled CreateSchema(string schema, IDictionary<string, object> options)
         {
             var sql = $"CREATE SCHEMA {GetSpecialName(schema)}";
@@ -195,8 +195,8 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 删除 Schema
         /// </summary>
-        /// <param name="schema"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>删除 Schema 的 SQL 命令</returns>
         public Sqled DropSchema(string schema)
         {
             return $"DROP SCHEMA IF EXISTS {GetSpecialName(schema)} CASCADE;";
@@ -209,8 +209,8 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取 Schema 所有表
         /// </summary>
-        /// <param name="schema"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>获取表的 SQL 命令</returns>
         public Sqled GetTables(string schema)
         {
             return $"SELECT table_name FROM information_schema.tables WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'";
@@ -219,11 +219,11 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取创建表时的字段定义
         /// </summary>
-        /// <param name="column"></param>
-        /// <param name="columnType"></param>
-        /// <param name="primaryKey"></param>
-        /// <param name="nullable"></param>
-        /// <returns></returns>
+        /// <param name="column">列名称</param>
+        /// <param name="columnType">列类型</param>
+        /// <param name="primaryKey">是否为主键</param>
+        /// <param name="nullable">是否可空</param>
+        /// <returns>字段定义 SQL</returns>
         public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
         {
             if (primaryKey)
@@ -236,10 +236,10 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 创建 表
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="columnDesciptors"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <param name="columnDesciptors">列描述符集合</param>
+        /// <returns>创建表的 SQL 命令</returns>
         public Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors)
         {
             var sql = new Sqled();
@@ -260,9 +260,9 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 删除 表
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <returns>删除表的 SQL 命令</returns>
         public Sqled DropTable(string schema, string table)
         {
             return $"DROP TABLE IF EXISTS {GetSpecialName(schema)}.{GetSpecialName(table)} CASCADE;";
@@ -275,9 +275,9 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
         public Sqled GetColumns(string schema, string table)
         {
             return $@"
@@ -317,8 +317,8 @@ ORDER BY
         /// <summary>
         /// 创建列
         /// </summary>
-        /// <param name="columnDesciptor"></param>
-        /// <returns></returns>
+        /// <param name="columnDesciptor">列描述符</param>
+        /// <returns>创建列的 SQL 命令</returns>
         public Sqled CreateColumn(DbColumnDesciptor columnDesciptor)
         {
             var schema = columnDesciptor.SchemaName;
@@ -335,11 +335,11 @@ ORDER BY
         /// <summary>
         /// 重命名列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <param name="column">原列名</param>
+        /// <param name="columnTarget">新列名</param>
+        /// <returns>重命名列的 SQL 命令</returns>
         public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
         {
             return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
@@ -348,9 +348,9 @@ ORDER BY
         /// <summary>
         /// 修改列
         /// </summary>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <returns></returns>
+        /// <param name="column">原列描述符</param>
+        /// <param name="columnTarget">目标列描述符</param>
+        /// <returns>修改列的 SQL 命令</returns>
         public Sqled ModifyColumn(DbColumnDesciptor column, DbColumnDesciptor columnTarget)
         {
             var schema = column.SchemaName;
@@ -374,12 +374,12 @@ ORDER BY
         /// <summary>
         /// 复制列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <param name="columnType"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <param name="column">原列名</param>
+        /// <param name="columnTarget">目标列名</param>
+        /// <param name="columnType">列类型</param>
+        /// <returns>复制列的 SQL 命令</returns>
         public Sqled CopyColumn(string schema, string table, string column, string columnTarget, string columnType)
         {
             return $"UPDATE {GetSpecialName(schema)}.{GetSpecialName(table)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
@@ -388,10 +388,10 @@ ORDER BY
         /// <summary>
         /// 删除列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <param name="column">列名</param>
+        /// <returns>删除列的 SQL 命令</returns>
         public Sqled DropColumn(string schema, string table, string column)
         {
             return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
@@ -404,9 +404,9 @@ ORDER BY
         /// <summary>
         /// 获取表的所有索引
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <returns>获取索引的 SQL 命令</returns>
         public Sqled GetIndexes(string schema, string table)
         {
             return $@"
@@ -434,8 +434,8 @@ ORDER BY
         /// <summary>
         /// 创建 索引
         /// </summary>
-        /// <param name="indexDesciptor"></param>
-        /// <returns></returns>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>创建索引的 SQL 命令</returns>
         public Sqled CreateIndex(DbIndexDesciptor indexDesciptor)
         {
             var schema = indexDesciptor.SchemaName;
@@ -453,10 +453,10 @@ ORDER BY
         /// <summary>
         /// 删除 索引
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <returns></returns>
+        /// <param name="schema">Schema 名称</param>
+        /// <param name="table">表名称</param>
+        /// <param name="column">列名</param>
+        /// <returns>删除索引的 SQL 命令</returns>
         public Sqled DropIndex(string schema, string table, string column)
         {
             return $"DROP INDEX IF EXISTS {GetSpecialName(schema)}.{table}_{column}_IDX CASCADE;";

@@ -12,11 +12,10 @@ namespace Delly.DBunny.Connecting.Extension
         /// <summary>
         /// 获取数据库连接描述器
         /// </summary>
-        /// <param name="factory"></param>
-        /// <param name="name"></param>
-        /// <param name="define"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"></exception>
+        /// <param name="define">连接定义</param>
+        /// <param name="databaseType">数据库类型</param>
+        /// <param name="connectionName">连接名称</param>
+        /// <returns>连接描述符</returns>
         public static DbConnectionDescriptor GetDbConnectionDescriptor(this IDbConnectionDefine define, string databaseType, string connectionName)
         {
             return new DbConnectionDescriptor(connectionName, databaseType, define.ConnectionString);

@@ -15,6 +15,8 @@ namespace Delly.DBunny
         /// <summary>
         /// 数据库作业命令
         /// </summary>
+        /// <param name="sql">SQL 脚本</param>
+        /// <param name="parameters">参数集合</param>
         public Sqled(string sql, IEnumerable<KeyValuePair<string, object>> parameters) : this(sql)
         {
             foreach (var pair in parameters)
@@ -24,8 +26,9 @@ namespace Delly.DBunny
         }
 
         /// <summary>
-        /// 数据库作业命令包裹曾
+        /// 数据库作业命令
         /// </summary>
+        /// <param name="sql">SQL 脚本</param>
         public Sqled(string sql)
         {
             _stringBuilder = new StringBuilder(sql);
@@ -37,7 +40,7 @@ namespace Delly.DBunny
         }
 
         /// <summary>
-        /// 数据库作业命令包裹曾
+        /// 数据库作业命令
         /// </summary>
         public Sqled()
         {
@@ -67,8 +70,8 @@ namespace Delly.DBunny
         /// <summary>
         /// 运算符重载
         /// </summary>
-        /// <param name="sql"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL 脚本字符串</param>
+        /// <returns>Sqled 实例</returns>
         public static implicit operator Sqled(string sql)
         {
             return new Sqled(sql);
@@ -77,8 +80,7 @@ namespace Delly.DBunny
         /// <summary>
         /// 获取参数字符串
         /// </summary>
-        /// <param name="sqlSet"></param>
-        /// <returns></returns>
+        /// <returns>参数字符串</returns>
         public string GetParametersString()
         {
             var sb = new StringBuilder();
@@ -98,7 +100,7 @@ namespace Delly.DBunny
         /// <summary>
         /// 转为字符串
         /// </summary>
-        /// <returns></returns>
+        /// <returns>字符串表示</returns>
         public override string ToString()
         {
             var sql = _stringBuilder.ToString().Replace("\r", "\\r").Replace("\n", "\\n");

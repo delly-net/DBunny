@@ -14,8 +14,8 @@ namespace Delly.DBunny
         /// <summary>
         /// 获取提供程序
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="databaseType">数据库类型</param>
+        /// <returns>数据库提供程序</returns>
 #if NETSTANDARD2_0
         IDbProvider GetProvider(string databaseType);
 #else
@@ -25,7 +25,7 @@ namespace Delly.DBunny
         /// <summary>
         /// 获取数据库类型集合
         /// </summary>
-        /// <returns></returns>
+        /// <returns>数据库类型集合</returns>
         IReadOnlyList<string> GetDatabaseTypes();
 
     }

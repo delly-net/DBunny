@@ -18,7 +18,7 @@ namespace Delly.DBunny.Providing
         /// <summary>
         /// 默认数据库工厂
         /// </summary>
-        /// <param name="providers"></param>
+        /// <param name="providers">数据库提供程序集合</param>
         public DefaultDbProviderFactory(params IDbProvider[] providers)
         {
             _providers = new Dictionary<string, IDbProvider>();
@@ -28,7 +28,7 @@ namespace Delly.DBunny.Providing
         /// <summary>
         /// 附加
         /// </summary>
-        /// <param name="provider"></param>
+        /// <param name="provider">数据库提供程序</param>
         public void Append(IDbProvider provider)
         {
             Register(provider);
@@ -45,7 +45,7 @@ namespace Delly.DBunny.Providing
         /// <summary>
         /// 获取数据库类型集合
         /// </summary>
-        /// <returns></returns>
+        /// <returns>数据库类型集合</returns>
         public IReadOnlyList<string> GetDatabaseTypes()
         {
             return _providers.Keys.ToArray();
@@ -54,8 +54,8 @@ namespace Delly.DBunny.Providing
         /// <summary>
         /// 获取提供程序
         /// </summary>
-        /// <param name="databaseType"></param>
-        /// <returns></returns>
+        /// <param name="databaseType">数据库类型</param>
+        /// <returns>数据库提供程序</returns>
 #if NETSTANDARD2_0
         public IDbProvider GetProvider(string databaseType)
 #else

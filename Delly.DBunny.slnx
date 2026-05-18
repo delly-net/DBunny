@@ -1,11 +1,13 @@
 <Solution>
   <Folder Name="/UnitTests/">
+    <Project Path="UnitTest.MsAccess/UnitTest.MsAccess.csproj" />
     <Project Path="UnitTest.MySql/UnitTest.MySql.csproj" />
     <Project Path="UnitTest.Oracle/UnitTest.Oracle.csproj" />
     <Project Path="UnitTest.PostgreSql/UnitTest.PostgreSql.csproj" />
     <Project Path="UnitTest.Sqlite/UnitTest.Sqlite.csproj" />
   </Folder>
   <Project Path="Delly.DBunny.Core/Delly.DBunny.Core.csproj" />
+  <Project Path="Delly.DBunny.MsAccess/Delly.DBunny.MsAccess.csproj" />
   <Project Path="Delly.DBunny.MySql/Delly.DBunny.MySql.csproj" />
   <Project Path="Delly.DBunny.Oracle/Delly.DBunny.Oracle.csproj" />
   <Project Path="Delly.DBunny.PostgreSql/Delly.DBunny.PostgreSql.csproj" />

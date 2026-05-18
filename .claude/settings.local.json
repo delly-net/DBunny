@@ -13,7 +13,9 @@
       "Bash(csc -nologo test.sql.cs)",
       "Bash(./test.sql.exe)",
       "Bash(dotnet clean *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(cd /d/Project.Github/delly-net/DBunny && dotnet test UnitTest.MsAccess/UnitTest.MsAccess.csproj --logger \"console;verbosity=detailed\" --no-build 2>&1)",
+      "Read(//d/Project.Github/delly-net/**)"
     ]
   }
 }

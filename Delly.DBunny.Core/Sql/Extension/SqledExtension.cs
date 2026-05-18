@@ -10,13 +10,11 @@ namespace Delly.DBunny.Sql.Extension
     public static class SqlSetExtension
     {
         /// <summary>
-        /// 获取数据库连接描述器
+        /// 附加内容到 SQL
         /// </summary>
-        /// <param name="factory"></param>
-        /// <param name="name"></param>
-        /// <param name="define"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"></exception>
+        /// <param name="sqlSet">SQL 集合</param>
+        /// <param name="value">要附加的值</param>
+        /// <returns>Sqled 实例</returns>
         public static Sqled Append(
             this Sqled sqlSet,
 #if NETSTANDARD2_0
@@ -33,10 +31,10 @@ namespace Delly.DBunny.Sql.Extension
         /// <summary>
         /// 设置参数
         /// </summary>
-        /// <param name="sqlSet"></param>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL 集合</param>
+        /// <param name="name">参数名称</param>
+        /// <param name="value">参数值</param>
+        /// <returns>Sqled 实例</returns>
         public static Sqled Set(this Sqled sql, string name, object value)
         {
             sql.Parameters[name] = value;
@@ -46,10 +44,9 @@ namespace Delly.DBunny.Sql.Extension
         /// <summary>
         /// 设置参数
         /// </summary>
-        /// <param name="sqlSet"></param>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL 集合</param>
+        /// <param name="pair">参数键值对</param>
+        /// <returns>Sqled 实例</returns>
         public static Sqled Set(this Sqled sql, KeyValuePair<string, object> pair)
         {
             sql.Parameters[pair.Key] = pair.Value;
@@ -59,10 +56,9 @@ namespace Delly.DBunny.Sql.Extension
         /// <summary>
         /// 设置参数
         /// </summary>
-        /// <param name="sqlSet"></param>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL 集合</param>
+        /// <param name="parameters">参数集合</param>
+        /// <returns>Sqled 实例</returns>
         public static Sqled Set(this Sqled sql, IEnumerable<KeyValuePair<string, object>> parameters)
         {
             foreach (var pair in parameters)

@@ -49,17 +49,17 @@ namespace Delly.DBunny.Connecting
         /// <summary>
         /// 包含键
         /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
+        /// <param name="key">键名</param>
+        /// <returns>是否包含键</returns>
         protected bool ContainsKey(string key) => _values.ContainsKey(key);
 
         /// <summary>
         /// 获取值
         /// </summary>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="key"></param>
-        /// <param name="defaultValue"></param>
-        /// <returns></returns>
+        /// <typeparam name="TValue">值类型</typeparam>
+        /// <param name="key">键名</param>
+        /// <param name="defaultValue">默认值</param>
+        /// <returns>键对应的值</returns>
 #if NETSTANDARD2_0
         protected TValue Get<TValue>(string key, TValue defaultValue)
         {
@@ -80,8 +80,8 @@ namespace Delly.DBunny.Connecting
         /// <summary>
         /// 设置值
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="key">键名</param>
+        /// <param name="value">值</param>
 #if NETSTANDARD2_0
         protected void Set(string key, object value)
 #else
@@ -94,7 +94,7 @@ namespace Delly.DBunny.Connecting
         /// <summary>
         /// 转为连接字符串
         /// </summary>
-        /// <returns></returns>
+        /// <returns>连接字符串</returns>
         public virtual string ToConnectionString()
         {
             var sb = new StringBuilder();

@@ -18,13 +18,14 @@ A lightweight .NET database abstraction layer that provides a unified API for wo
 
 ## Packages
 
-| Package | Description | NuGet |
-|---------|-------------|-------|
-| [Delly.DBunny.Core](Delly.DBunny.Core/) | Core library with interfaces and base types | - |
-| [Delly.DBunny.Sqlite](Delly.DBunny.Sqlite/) | SQLite provider implementation | - |
-| [Delly.DBunny.MySql](Delly.DBunny.MySql/) | MySQL provider implementation | - |
-| [Delly.DBunny.PostgreSql](Delly.DBunny.PostgreSql/) | PostgreSQL provider implementation | - |
-| [Delly.DBunny.Oracle](Delly.DBunny.Oracle/) | Oracle provider implementation | - |
+| Package | Description | Platform | NuGet |
+|---------|-------------|----------|-------|
+| [Delly.DBunny.Core](Delly.DBunny.Core/) | Core library with interfaces and base types | Cross-platform | - |
+| [Delly.DBunny.Sqlite](Delly.DBunny.Sqlite/) | SQLite provider implementation | Cross-platform | - |
+| [Delly.DBunny.MySql](Delly.DBunny.MySql/) | MySQL provider implementation | Cross-platform | - |
+| [Delly.DBunny.PostgreSql](Delly.DBunny.PostgreSql/) | PostgreSQL provider implementation | Cross-platform | - |
+| [Delly.DBunny.Oracle](Delly.DBunny.Oracle/) | Oracle provider implementation | Cross-platform | - |
+| [Delly.DBunny.MsAccess](Delly.DBunny.MsAccess/) | Microsoft Access provider (.accdb & .mdb) | Windows only | - |
 
 ## Installation
 
@@ -56,6 +57,14 @@ dotnet add package Delly.DBunny.PostgreSql
 
 ```bash
 dotnet add package Delly.DBunny.Oracle
+```
+
+### Microsoft Access Provider
+
+> **Windows Only:** The Access provider is only supported on Windows.
+
+```bash
+dotnet add package Delly.DBunny.MsAccess
 ```
 
 ## Quick Start
@@ -186,6 +195,45 @@ connection.Open();
 // ... same query operations as SQLite (note: Oracle uses : parameter prefix)
 ```
 
+### Microsoft Access Example
+
+> **Note:** The Access provider is Windows-only as it depends on Microsoft Access Database Engine (OLE DB).
+
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.MsAccess;
+using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
+using System.Data.Common;
+
+// For modern .accdb files
+var connectionDefine = new MsAccessConnectionDefine()
+    .WithDataSource("mydb.accdb")
+    .WithProviderAce()
+    .WithPooling(false)
+    .WithReadWrite();
+
+// For legacy .mdb files (32-bit only)
+var legacyConnectionDefine = new MsAccessConnectionDefine()
+    .WithDataSource("mydb.mdb")
+    .WithProviderJet()
+    .WithPooling(false);
+
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    MsAccessConnectionDefine.DATABASE_TYPE, "Default");
+
+var provider = new MsAccessProvider();
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
+
+// Note: Access uses position-based parameters (?)
+var insertSql = new Sqled("INSERT INTO [Users] (Name, Age) VALUES (?, ?)")
+    .Set("name", "John Doe")
+    .Set("age", 30);
+
+// ... same query operations as SQLite
+```
+
 ## Core Concepts
 
 ### Sqled
@@ -261,16 +309,17 @@ await command.ExecuteNonQueryAsync();
 
 ## Database Comparison
 
-| Feature | SQLite | MySQL | PostgreSQL | Oracle |
-|---------|--------|-------|------------|--------|
-| HasDatabase | No | Yes | Yes | No |
-| HasSchema | No | No | Yes | Yes |
-| Name Quoting | `[name]` | `` `name` `` | `"name"` | `"name"` |
-| Parameter Prefix | `@` | `@` | `@` | `:` |
-| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY |
-| Decimal Type | REAL | DECIMAL | NUMERIC | NUMBER |
-| DateTime Type | TEXT | DATETIME | TIMESTAMP | TIMESTAMP |
-| Large Text | TEXT | TEXT | TEXT | CLOB |
+| Feature | SQLite | MySQL | PostgreSQL | Oracle | MsAccess |
+|---------|--------|-------|------------|--------|----------|
+| Platform | Cross-platform | Cross-platform | Cross-platform | Cross-platform | Windows only |
+| HasDatabase | No | Yes | Yes | No | No |
+| HasSchema | No | No | Yes | Yes | No |
+| Name Quoting | `[name]` | `` `name` `` | `"name"` | `"name"` | `[name]` |
+| Parameter Prefix | `@` | `@` | `@` | `:` | `?` (positional) |
+| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY AUTOINCREMENT |
+| Decimal Type | REAL | DECIMAL | NUMERIC | NUMBER | CURRENCY |
+| DateTime Type | TEXT | DATETIME | TIMESTAMP | TIMESTAMP | DATETIME |
+| Large Text | TEXT | TEXT | TEXT | CLOB | LONGTEXT |
 
 ## Links
 

@@ -24,10 +24,10 @@ namespace Delly.DBunny.Sqlite
         public ISqlProvider SqlProvider { get; } = new SqliteSqlProvider();
 
         /// <summary>
-        /// 获取DataSet
+        /// 获取 DataSet
         /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
+        /// <param name="command">数据库命令</param>
+        /// <returns>数据集</returns>
         public DataSet GetDataSet(DbCommand command)
         {
             var sqlDataAdapter = new SQLiteDataAdapter { SelectCommand = (SQLiteCommand)command };
@@ -39,8 +39,8 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取数据库命令管理器
         /// </summary>
-        /// <param name="connection"></param>
-        /// <returns></returns>
+        /// <param name="connection">数据库连接</param>
+        /// <returns>数据库命令</returns>
         public DbCommand GetDbCommand(DbConnection connection)
         {
             var sqlCommand = new SQLiteCommand
@@ -54,8 +54,8 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取数据库连接
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
+        /// <param name="connectionString">连接字符串</param>
+        /// <returns>数据库连接</returns>
         public DbConnection GetDbConnection(string connectionString)
         {
             return new SQLiteConnection(connectionString);
@@ -64,8 +64,8 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 设置参数集
         /// </summary>
-        /// <param name="command"></param>
-        /// <param name="parameters"></param>
+        /// <param name="command">数据库命令</param>
+        /// <param name="parameters">参数集合</param>
         public void SetParameters(DbCommand command, IEnumerable<KeyValuePair<string, object>> parameters)
         {
             command.Parameters.Clear();
@@ -78,8 +78,8 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取所有 Schema
         /// </summary>
-        /// <param name="connection"></param>
-        /// <returns></returns>
+        /// <param name="connection">数据库连接</param>
+        /// <returns>Schema 名称列表</returns>
         /// <exception cref="NotImplementedException"></exception>
         public Task<IReadOnlyList<string>> GetSchemas(DbConnection connection)
         {
@@ -89,9 +89,9 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取所有表
         /// </summary>
-        /// <param name="connection"></param>
-        /// <param name="schema"></param>
-        /// <returns></returns>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
+        /// <returns>表描述符列表</returns>
         public async Task<IReadOnlyList<DbTableDesciptor>> GetTables(DbConnection connection, string schema)
         {
             var tables = new List<DbTableDesciptor>();
@@ -112,10 +112,10 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取表中的所有列
         /// </summary>
-        /// <param name="connection"></param>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <returns></returns>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
+        /// <param name="table">表名称</param>
+        /// <returns>列描述符列表</returns>
         public async Task<IReadOnlyList<DbColumnDesciptor>> GetColumns(DbConnection connection, string schema, string table)
         {
             var columns = new List<DbColumnDesciptor>();
@@ -140,10 +140,10 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取表中的所有索引
         /// </summary>
-        /// <param name="connection"></param>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <returns></returns>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
+        /// <param name="table">表名称</param>
+        /// <returns>索引描述符列表</returns>
         public async Task<IReadOnlyList<DbIndexDesciptor>> GetIndexes(DbConnection connection, string schema, string table)
         {
             var indexes = new List<DbIndexDesciptor>();

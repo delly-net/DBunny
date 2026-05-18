@@ -18,6 +18,7 @@ namespace Delly.DBunny.Connecting
         /// <summary>
         /// 主机数据库上下文配置工厂
         /// </summary>
+        /// <param name="providers">数据库连接描述符集合</param>
         public DefaultDbConnectionFactory(
             params DbConnectionDescriptor[] providers
             )
@@ -29,6 +30,7 @@ namespace Delly.DBunny.Connecting
         /// <summary>
         /// 获取默认连接
         /// </summary>
+        /// <returns>默认连接描述符</returns>
         public DbConnectionDescriptor GetDefaultConnection()
         {
             if (_descriptors.Count <= 0) { throw new KeyNotFoundException($"No database connection."); }
@@ -43,8 +45,8 @@ namespace Delly.DBunny.Connecting
         /// <summary>
         /// 获取连接描述
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">连接名称</param>
+        /// <returns>连接描述符</returns>
         public DbConnectionDescriptor GetConnection(string name)
         {
 #if NETSTANDARD2_0

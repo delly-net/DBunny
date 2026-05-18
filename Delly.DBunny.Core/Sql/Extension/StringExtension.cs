@@ -10,10 +10,10 @@ namespace Delly.DBunny.Sql.Extension
     public static class StringExtension
     {
         /// <summary>
-        /// 转为Sql对象
+        /// 转为 Sql 对象
         /// </summary>
-        /// <param name="sql"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL 脚本字符串</param>
+        /// <returns>Sqled 实例</returns>
         public static Sqled ToSql(this string sql)
         {
             return new Sqled(sql);

@@ -211,6 +211,11 @@ To add support for a new database:
 - **Constants** use UPPER_CASE with underscores (e.g., `DATA_SOURCE_KEY`, `DEFAULT_TIMEOUT_KEY`)
 - Database type constants use `DATABASE_TYPE` name
 - Connection parameter constants use `_KEY` suffix
+- **Documentation**: All public functions MUST have complete XML documentation comments:
+  - `/// <summary>` tag describing what the function does
+  - `/// <param name="xxx">` tags for each parameter with descriptions
+  - `/// <returns>` tag describing the return value (if not void)
+  - `/// <typeparam name="TValue">` tags for generic type parameters (if applicable)
 
 ## Database Comparison
 
