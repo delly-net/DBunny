@@ -9,6 +9,8 @@
 		<PackageIcon>Bunny_128.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>db database orm data sql sqlite mysql postgresql oracle sqlserver access provider abstraction multi-database netstandard dotnet dotnet5 dotnet8 aot</PackageTags>
+		<RepositoryUrl>https://github.com/delly-net/DBunny</RepositoryUrl>
 	</PropertyGroup>
 
 	<!-- 仅给支持的框架开启 Nullable -->
