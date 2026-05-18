@@ -4,7 +4,7 @@
 [![.NET](https://img.shields.io/badge/.NET-Standard2.0%20%7C%20net5.0%20%7C%20net8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![AOT Compatible](https://img.shields.io/badge/AOT-Compatible-success.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 
-Oracle provider implementation for DBunny.
+Oracle provider implementation for DBunny. Supports Oracle Database 11g and later.
 
 ## Installation
 
@@ -101,9 +101,9 @@ var descriptor = connectionDefine.GetDbConnectionDescriptor(
 | Data Source | - | Oracle data source (host:port/service or TNS name) |
 | User Id | - | Username |
 | Password | - | Password |
-| Connection Timeout | 15 | Connection timeout in seconds |
+| Connection Timeout | 30 | Connection timeout in seconds |
 | Pooling | True | Enable connection pooling |
-| Min Pool Size | 1 | Minimum pool size |
+| Min Pool Size | 0 | Minimum pool size |
 | Max Pool Size | 100 | Maximum pool size |
 
 ## Oracle Features
@@ -112,17 +112,47 @@ var descriptor = connectionDefine.GetDbConnectionDescriptor(
 - **Schema Layer**: Full schema support (schema = user)
 - **Name Quoting**: Uses double quotes `"name"`
 - **Parameter Prefix**: `:`
+- **Sequences**: Uses sequences for auto-incrementing columns (SEQUENCE + TRIGGER)
 - **Type Mapping**:
   - Boolean → NUMBER(1)
-  - TinyInt → NUMBER(3)
-  - Int32 → NUMBER(10)
-  - Int64 → NUMBER(19)
+  - Byte, SByte → NUMBER(3)
+  - Int16, UInt16 → NUMBER(5)
+  - Int32, UInt32 → NUMBER(10)
+  - Int64, UInt64 → NUMBER(19)
   - Single → BINARY_FLOAT
   - Double → BINARY_DOUBLE
   - Decimal → NUMBER
   - DateTime → TIMESTAMP
-  - String → VARCHAR2
-  - Large String → CLOB
+  - String (<=4000 chars) → VARCHAR2
+  - String (>4000 chars) → CLOB
+
+## Data Source Format
+
+The Data Source parameter can be specified in several ways:
+
+### Easy Connect Format
+
+```csharp
+// host:port/service
+.WithDataSource("localhost:1521/ORCL")
+
+// Using SID (legacy)
+.WithDataSource("localhost:1521:XE")
+```
+
+### TNS Names
+
+If you have a tnsnames.ora file configured, use the TNS alias:
+
+```csharp
+.WithDataSource("ORCL")
+```
+
+### Full Connection Descriptor
+
+```csharp
+.WithDataSource("(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=ORCL)))")
+```
 
 ## Schema in Oracle
 
@@ -134,6 +164,18 @@ var tables = await provider.GetTables(connection, string.Empty);
 
 // Get tables in specific schema
 var tables = await provider.GetTables(connection, "OTHER_USER");
+```
+
+## Auto-Increment Columns
+
+Oracle doesn't have native AUTO_INCREMENT like MySQL. Instead, you use sequences:
+
+```csharp
+// Create a sequence first
+await ExecuteNonQueryAsync(connection, "CREATE SEQUENCE seq_users_id START WITH 1 INCREMENT BY 1");
+
+// Then create table with default value
+await ExecuteNonQueryAsync(connection, "INSERT INTO \"Users\" (Id, Name) VALUES (seq_users_id.NEXTVAL, 'John')");
 ```
 
 ## Dependencies

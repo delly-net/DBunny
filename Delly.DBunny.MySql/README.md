@@ -4,7 +4,7 @@
 [![.NET](https://img.shields.io/badge/.NET-Standard2.0%20%7C%20net5.0%20%7C%20net8.0-purple.svg)](https://dotnet.microsoft.com/)
 [![AOT Compatible](https://img.shields.io/badge/AOT-Compatible-success.svg)](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
 
-MySQL provider implementation for DBunny.
+MySQL provider implementation for DBunny. Also compatible with MariaDB.
 
 ## Installation
 
@@ -28,8 +28,7 @@ var connectionDefine = new MySqlConnectionDefine()
     .WithDatabase("mydb")
     .WithUserId("root")
     .WithPassword("password")
-    .WithCharset("utf8mb4")
-    .WithSslMode("None");
+    .WithCharset("utf8mb4");
 
 var descriptor = connectionDefine.GetDbConnectionDescriptor(
     MySqlConnectionDefine.DATABASE_TYPE, "Default");
@@ -95,7 +94,7 @@ var connectionDefine = new MySqlConnectionDefine()
     .WithSslMode("None")
     .WithAllowPublicKeyRetrieval(true)
     .WithConnectionTimeout(30)
-    .WithDefaultCommandTimeout(60)
+    .WithDefaultCommandTimeout(600)
     .WithPooling(true)
     .WithMinPoolSize(0)
     .WithMaxPoolSize(100);
@@ -114,16 +113,16 @@ var descriptor = connectionDefine.GetDbConnectionDescriptor(
 | User Id | - | Username |
 | Password | - | Password |
 | Charset | utf8mb4 | Character set |
-| SSL Mode | Required | SSL mode (None, Preferred, Required) |
-| Allow Public Key Retrieval | False | Allow public key retrieval |
+| SSL Mode | Required | SSL mode (None, Preferred, Required, DisableCAVerification, VerifyCA, VerifyFull) |
+| Allow Public Key Retrieval | True | Allow public key retrieval (for authentication) |
 | Connection Timeout | 30 | Connection timeout in seconds |
-| Default Command Timeout | 30 | Command timeout in seconds |
+| Default Command Timeout | 600 | Command timeout in seconds |
 | Pooling | True | Enable connection pooling |
-| Min Pool Size | 0 | Minimum pool size |
-| Max Pool Size | 100 | Maximum pool size |
-| Persist Security Info | False | Persist security info |
-| Allow Zero DateTime | False | Allow zero datetime values |
-| Convert Zero DateTime | False | Convert zero datetime to DateTime.MinValue |
+| Minimum Pool Size | 0 | Minimum pool size |
+| Maximum Pool Size | 100 | Maximum pool size |
+| Persist Security Info | False | Persist security info in connection string |
+| Allow Zero DateTime | False | Allow zero datetime values (0000-00-00) |
+| Convert Zero DateTime | True | Convert zero datetime to DateTime.MinValue |
 
 ## MySQL Features
 
@@ -131,16 +130,43 @@ var descriptor = connectionDefine.GetDbConnectionDescriptor(
 - **No Schema Layer**: MySQL doesn't use separate schemas
 - **Name Quoting**: Uses backticks `` `name` ``
 - **Parameter Prefix**: `@`
+- **Auto Increment**: Uses `AUTO_INCREMENT` for auto-incrementing primary keys
 - **Type Mapping**:
   - Boolean → TINYINT(1)
-  - TinyInt → TINYINT(3)
-  - Int32 → INT
-  - Int64 → BIGINT
+  - Byte, SByte → TINYINT(3)
+  - Int16, UInt16 → SMALLINT
+  - Int32, UInt32 → INT
+  - Int64, UInt64 → BIGINT
   - Single → FLOAT
-  - Double, Decimal → DECIMAL
+  - Double → DOUBLE
+  - Decimal → DECIMAL
   - DateTime → DATETIME
-  - String → VARCHAR
-  - Large String → TEXT
+  - String (<=65535 chars) → VARCHAR
+  - String (>65535 chars) → TEXT
+
+## MariaDB Compatibility
+
+This provider also works with MariaDB using the same connection parameters and MySqlConnector driver.
+
+## SSL Mode Options
+
+- **None**: No SSL (not recommended for production)
+- **Preferred**: Try SSL first, fall back to non-SSL
+- **Required**: SSL required (but certificate not verified)
+- **VerifyCA**: SSL required and certificate authority verified
+- **VerifyFull**: SSL required with full certificate verification
+
+## Zero DateTime Handling
+
+MySQL supports "zero" datetime values (0000-00-00). To handle these:
+
+```csharp
+// Allow reading zero datetime values
+connectionDefine.WithAllowZeroDateTime(true);
+
+// Convert zero datetime to DateTime.MinValue (default enabled)
+connectionDefine.WithConvertZeroDateTime(true);
+```
 
 ## Dependencies
 

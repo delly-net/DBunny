@@ -89,7 +89,15 @@ sql.Append(" AND Age > @minAge")
 
 // Access properties
 string query = sql.Sql;
-IEnumerable<KeyValuePair<string, object>> params = sql.Parameters;
+Dictionary<string, object> params = sql.Parameters;
+
+// For complex SQL, use Builder directly
+var createTableSql = new Sqled();
+createTableSql.Builder.AppendLine("CREATE TABLE [Users](");
+createTableSql.Builder.Append("    [Id] INTEGER NOT NULL PRIMARY KEY,");
+createTableSql.Builder.Append("    [Name] TEXT(100) NOT NULL,");
+createTableSql.Builder.AppendLine("    [Age] INTEGER NULL");
+createTableSql.Builder.AppendLine(");");
 ```
 
 ### Descriptors
@@ -164,31 +172,58 @@ public enum DbColumnType
 }
 ```
 
-### Factories
+### Base Classes
 
-#### DefaultDbConnectionFactory
+#### BaseConnectionDefine
 
-Default implementation of IDbConnectionFactory for managing connection descriptors.
+Abstract base class for connection definitions:
 
 ```csharp
-var descriptor = new DbConnectionDescriptor
+public abstract class BaseConnectionDefine : IDbConnectionDefine
 {
-    Name = "Default",
-    DatabaseType = "SQLITE",
-    ConnectionString = "Data Source=mydb.db"
-};
-
-var factory = new DefaultDbConnectionFactory(descriptor);
-var connection = factory.GetDefaultConnection();
+    protected void Set(string key, object value);
+    protected T Get<T>(string key, T defaultValue);
+    protected bool ContainsKey(string key);
+    protected IDictionary<string, object> GetProperties();
+    public string GetConnectionString();
+}
 ```
 
-#### DefaultDbProviderFactory
+### Extensions
 
-Default implementation of IDbProviderFactory for managing database providers.
+#### SqledExtension
+
+Fluent methods for building SQL:
 
 ```csharp
-var factory = new DefaultDbProviderFactory(new SqliteProvider());
-var provider = factory.GetProvider("SQLITE");
+public static class SqledExtension
+{
+    public static Sqled Append(this Sqled sqled, string sql);
+    public static Sqled Set(this Sqled sqled, string key, object value);
+}
+```
+
+#### DbProviderExtension
+
+Helper methods for executing queries:
+
+```csharp
+public static class DbProviderExtension
+{
+    public static async Task ReadAsync(this IDbProvider provider, DbConnection connection, Sqled sqled, Func<DbDataReader, Task> readAction);
+    public static void Read(this IDbProvider provider, DbConnection connection, Sqled sqled, Action<DbDataReader> readAction);
+}
+```
+
+#### DbConnectionDefineExtension
+
+Extension methods for connection define:
+
+```csharp
+public static class DbConnectionDefineExtension
+{
+    public static DbConnectionDescriptor GetDbConnectionDescriptor(this IDbConnectionDefine connectionDefine, string databaseType, string name);
+}
 ```
 
 ## License

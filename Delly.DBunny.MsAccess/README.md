@@ -46,7 +46,7 @@ connection.Open();
 // Create a table
 var columnDescriptors = new List<DbColumnDesciptor>
 {
-    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "COUNTER", PrimaryKeyFlag = true, NullableFlag = false },
     new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
     new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
 };
@@ -133,13 +133,24 @@ var connectionString = descriptor.ConnectionString;
 - **.accdb**: Modern Access format (2007+), requires ACE 12.0+ provider
 - **.mdb**: Legacy format (2003 and earlier), requires Jet 4.0 or ACE provider
 
+### Access Mode Options
+
+- **Share Deny None**: Default, allows shared read/write access
+- **Share Deny Read**: Others can write but not read
+- **Share Deny Write**: Others can read but not write
+- **Share Exclusive**: Exclusive access for this user
+- **Read**: Read-only access
+- **Read Write**: Read/write access
+
 ### Limitations
 
 1. **No Database Operations**: Access databases are files, not servers
 2. **No Schema Support**: Access doesn't support schemas
 3. **Positional Parameters**: OleDb uses `?` parameters (position-based, not named)
 4. **Name Quoting**: Uses square brackets `[name]`
-5. **AUTOINCREMENT**: Only INTEGER columns can have AUTOINCREMENT for auto-incrementing primary keys
+5. **AUTOINCREMENT/COUNTER**: For auto-incrementing primary keys
+6. **No Column Rename**: Access doesn't support renaming columns directly
+7. **No Column Modify**: Access doesn't support modifying column types directly
 
 ### Type Mapping
 
@@ -166,28 +177,28 @@ var connectionString = descriptor.ConnectionString;
 - ❌ Modify column types (not supported by Access)
 - ❌ Multiple databases (file-based only)
 
-### Known Issues
+### Workarounds
+
+**Rename Column**: Create a new column, copy data, drop the old column
+
+```csharp
+// 1. Add new column
+await ExecuteNonQueryAsync(connection, "ALTER TABLE [Users] ADD COLUMN [NewName] VARCHAR(100);");
+
+// 2. Copy data
+await ExecuteNonQueryAsync(connection, "UPDATE [Users] SET [NewName] = [OldName];");
+
+// 3. Drop old column
+await ExecuteNonQueryAsync(connection, "ALTER TABLE [Users] DROP COLUMN [OldName];");
+```
+
+**Modify Column Type**: Create a new table with the new schema, copy data, drop old table
+
+## Known Issues
 
 - Column metadata from `MSysObjects` and `INFORMATION_SCHEMA` may have limited information
 - Primary key detection requires additional queries beyond the basic `GetColumns` implementation
 - Index uniqueness information is not fully exposed through system tables
-
-## Example: Creating a New Database File
-
-```csharp
-using ADOX; // Requires COM reference to Microsoft ADO Ext. 6.0 for DDL and Security
-
-var catalog = new Catalog();
-catalog.Create("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=newdb.accdb;");
-catalog = null;
-```
-
-Or using ADO.NET with a template file:
-
-```csharp
-// Copy an empty template database
-File.Copy("template.accdb", "newdb.accdb");
-```
 
 ## Dependencies
 

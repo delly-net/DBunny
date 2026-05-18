@@ -93,20 +93,20 @@ var connectionString = descriptor.ConnectionString;
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | Data Source | - | Database file path |
-| Version | 3 | SQLite version |
+| Version | 3 | SQLite version (2 or 3) |
 | Password | - | Database encryption password |
 | Page Size | 4096 | Page size in bytes |
-| Cache Size | -2000 | Cache size in KB |
-| Mode | ReadWriteCreate | File open mode |
+| Cache Size | 2000 | Cache size in pages |
+| Mode | ReadWriteCreate | File open mode (ReadOnly, ReadWrite, ReadWriteCreate, Memory) |
 | Default Timeout | 30 | Command timeout in seconds |
-| Journal Mode | Delete | Journal mode (Delete, Truncate, Persist, Memory, WAL, Off) |
+| Journal Mode | WAL | Journal mode (Delete, Truncate, Persist, Memory, WAL, Off) |
 | Pooling | True | Enable connection pooling |
-| Foreign Keys | False | Enable foreign key constraints |
+| Foreign Keys | True | Enable foreign key constraints |
 | Fail If Missing | False | Fail if database file doesn't exist |
 | Read Only | False | Open in read-only mode |
-| Legacy Format | False | Use legacy file format |
-| DateTime Format | ISO8601 | DateTime format |
-| DateTime Kind | Unspecified | DateTime kind (Unspecified, Utc, Local) |
+| Legacy Format | False | Use legacy file format (SQLite 2.x compatible) |
+| DateTime Format | ISO8601 | DateTime format (ISO8601, Ticks, UnixEpoch, JulianDay, Invariant) |
+| DateTime Kind | Utc | DateTime kind (Utc, Local, Unspecified) |
 
 ## SQLite Features
 
@@ -115,9 +115,37 @@ var connectionString = descriptor.ConnectionString;
 - **Name Quoting**: Uses square brackets `[name]`
 - **Parameter Prefix**: `@`
 - **Type Mapping**:
-  - Boolean, TinyInt, Int32, Int64 → INTEGER
+  - Boolean, Byte, SByte, Int16, UInt16, Int32, UInt32 → INTEGER
+  - Int64, UInt64 → INTEGER
   - Single, Double, Decimal → REAL
-  - String, DateTime → TEXT
+  - String → TEXT
+  - DateTime → TEXT
+
+## SQLite-Specific Notes
+
+### Journal Mode
+
+SQLite supports several journal modes for transaction durability:
+
+- **Delete**: Default mode, rollback journal is deleted at end of transaction
+- **Truncate**: Journal is truncated instead of deleted
+- **Persist**: Journal is kept but marked as invalid
+- **Memory**: Journal is stored in RAM
+- **WAL**: Write-Ahead Logging mode, allows concurrent readers and writers (recommended)
+- **Off**: Disable rollback journal (dangerous, may corrupt database)
+
+### Foreign Keys
+
+Foreign key constraints are disabled by default in SQLite. The connection builder enables them by default.
+
+### In-Memory Database
+
+For temporary in-memory databases:
+
+```csharp
+var connectionDefine = new SqliteConnectionDefine()
+    .WithDataSource(":memory:");
+```
 
 ## Dependencies
 

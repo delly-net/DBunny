@@ -25,6 +25,7 @@ A lightweight .NET database abstraction layer that provides a unified API for wo
 | [Delly.DBunny.MySql](Delly.DBunny.MySql/) | MySQL provider implementation | Cross-platform | - |
 | [Delly.DBunny.PostgreSql](Delly.DBunny.PostgreSql/) | PostgreSQL provider implementation | Cross-platform | - |
 | [Delly.DBunny.Oracle](Delly.DBunny.Oracle/) | Oracle provider implementation | Cross-platform | - |
+| [Delly.DBunny.SqlServer](Delly.DBunny.SqlServer/) | SQL Server provider implementation | Cross-platform | - |
 | [Delly.DBunny.MsAccess](Delly.DBunny.MsAccess/) | Microsoft Access provider (.accdb & .mdb) | Windows only | - |
 
 ## Installation
@@ -57,6 +58,12 @@ dotnet add package Delly.DBunny.PostgreSql
 
 ```bash
 dotnet add package Delly.DBunny.Oracle
+```
+
+### SQL Server Provider
+
+```bash
+dotnet add package Delly.DBunny.SqlServer
 ```
 
 ### Microsoft Access Provider
@@ -117,6 +124,46 @@ await provider.ReadAsync(connection, sql, async reader =>
 });
 ```
 
+### SQL Server Example
+
+```csharp
+using Delly.DBunny;
+using Delly.DBunny.SqlServer;
+using Delly.DBunny.Sql.Extension;
+using Delly.DBunny.Connecting.Extension;
+using System.Data.Common;
+
+// Define connection using builder
+var connectionDefine = new SqlServerConnectionDefine()
+    .WithServer("localhost")
+    .WithDatabase("mydb")
+    .WithUserId("sa")
+    .WithPassword("your_password")
+    .WithTrustServerCertificate(true);
+
+var connectionDescriptor = connectionDefine.GetDbConnectionDescriptor(
+    SqlServerConnectionDefine.DATABASE_TYPE, "Default");
+
+var provider = new SqlServerProvider();
+using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
+connection.Open();
+
+// Create a table in dbo schema
+var columnDescriptors = new List<DbColumnDesciptor>
+{
+    new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INT", PrimaryKeyFlag = true, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Name", ColumnType = "NVARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
+    new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = true }
+};
+var createTableSql = provider.SqlProvider.CreateTable("dbo", "Users", columnDescriptors);
+
+using var createCommand = provider.GetDbCommand(connection);
+createCommand.CommandText = createTableSql.Sql;
+await createCommand.ExecuteNonQueryAsync();
+
+// ... same query operations as SQLite
+```
+
 ### MySQL Example
 
 ```csharp
@@ -126,7 +173,6 @@ using Delly.DBunny.Sql.Extension;
 using Delly.DBunny.Connecting.Extension;
 using System.Data.Common;
 
-// Define connection using builder
 var connectionDefine = new MySqlConnectionDefine()
     .WithServer("localhost")
     .WithPort(3306)
@@ -142,7 +188,7 @@ var provider = new MySqlProvider();
 using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
 connection.Open();
 
-// ... same query operations as SQLite
+// ... same query operations as SQLite (uses backticks for name quoting)
 ```
 
 ### PostgreSQL Example
@@ -168,7 +214,7 @@ var provider = new PostgreSqlProvider();
 using var connection = provider.GetDbConnection(connectionDescriptor.ConnectionString);
 connection.Open();
 
-// ... same query operations as SQLite
+// ... same query operations as SQLite (uses double quotes for name quoting)
 ```
 
 ### Oracle Example
@@ -309,21 +355,21 @@ await command.ExecuteNonQueryAsync();
 
 ## Database Comparison
 
-| Feature | SQLite | MySQL | PostgreSQL | Oracle | MsAccess |
-|---------|--------|-------|------------|--------|----------|
-| Platform | Cross-platform | Cross-platform | Cross-platform | Cross-platform | Windows only |
-| HasDatabase | No | Yes | Yes | No | No |
-| HasSchema | No | No | Yes | Yes | No |
-| Name Quoting | `[name]` | `` `name` `` | `"name"` | `"name"` | `[name]` |
-| Parameter Prefix | `@` | `@` | `@` | `:` | `?` (positional) |
-| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY AUTOINCREMENT |
-| Decimal Type | REAL | DECIMAL | NUMERIC | NUMBER | CURRENCY |
-| DateTime Type | TEXT | DATETIME | TIMESTAMP | TIMESTAMP | DATETIME |
-| Large Text | TEXT | TEXT | TEXT | CLOB | LONGTEXT |
+| Feature | SQLite | MySQL | PostgreSQL | Oracle | SQL Server | MsAccess |
+|---------|--------|-------|------------|--------|------------|----------|
+| Platform | Cross-platform | Cross-platform | Cross-platform | Cross-platform | Cross-platform | Windows only |
+| HasDatabase | No | Yes | Yes | No | Yes | No |
+| HasSchema | No | No | Yes | Yes | Yes | No |
+| Name Quoting | `[name]` | `` `name` `` | `"name"` | `"name"` | `[name]` | `[name]` |
+| Parameter Prefix | `@` | `@` | `@` | `:` | `@` | `?` (positional) |
+| Primary Key | NOT NULL PRIMARY KEY | AUTO_INCREMENT PRIMARY KEY | NOT NULL PRIMARY KEY | NOT NULL PRIMARY KEY | IDENTITY(1,1) PRIMARY KEY | AUTOINCREMENT |
+| Decimal Type | REAL | DECIMAL | NUMERIC | NUMBER | DECIMAL | CURRENCY |
+| DateTime Type | TEXT | DATETIME | TIMESTAMP | TIMESTAMP | DATETIME | DATETIME |
+| Large Text | TEXT | TEXT | TEXT | CLOB | NVARCHAR(MAX) | LONGTEXT |
 
 ## Links
 
-- [Documentation](#) *[待更新]*
+- [Documentation](#)
 - [Issues](https://github.com/delly-net/DBunny/issues)
 - [Releases](https://github.com/delly-net/DBunny/releases)
 
