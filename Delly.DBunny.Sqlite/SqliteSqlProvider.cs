@@ -3,6 +3,7 @@ using Delly.DBunny.Core.Sql.Extension;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Delly.DBunny.Sqlite
 {
@@ -112,6 +113,54 @@ namespace Delly.DBunny.Sqlite
                     return "TEXT";
                 default: throw new NotSupportedException($"Column type '{columnType}' not supported.");
             }
+        }
+
+        /// <summary>
+        /// 获取参数 Sql对象
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public Sqled GetParamterSqled(string name, object value)
+        {
+            return $"@{name}".ToSql().Set(name, value);
+        }
+
+        /// <summary>
+        /// 获取时间参数 Sql对象
+        /// </summary>
+        /// <param name="name">参数名称</param>
+        /// <param name="value">时间值</param>
+        /// <returns>参数 Sql 对象</returns>
+        public Sqled GetTimeParamterSqled(string name, object value)
+        {
+            if (value is DateTime dateTime)
+            {
+                return GetParamterSqled(name, dateTime.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+            }
+            return GetParamterSqled(name, value);
+        }
+
+        /// <summary>
+        /// 附加游标
+        /// </summary>
+        /// <param name="sqled"></param>
+        /// <param name="take"></param>
+        /// <param name="skip"></param>
+        /// <returns></returns>
+        public Sqled AppendOffset(Sqled sqled, int? take, int? skip)
+        {
+            if (!take.HasValue) { return sqled; }
+            var sb = sqled.Builder;
+            if (skip.HasValue && skip.Value > 0)
+            {
+                sb.Append($" LIMIT {take} OFFSET {skip}");
+            }
+            else
+            {
+                sb.Append($" LIMIT {take}");
+            }
+            return sqled;
         }
 
         #region 数据库

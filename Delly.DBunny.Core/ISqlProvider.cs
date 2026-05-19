@@ -10,12 +10,48 @@ namespace Delly.DBunny.Core
     public interface ISqlProvider
     {
 
+        #region 名称
+
         /// <summary>
         /// 获取特有名称
         /// </summary>
         /// <param name="name">名称</param>
         /// <returns>特殊格式名称</returns>
         string GetSpecialName(string name);
+
+        #endregion
+
+        #region 参数
+
+        /// <summary>
+        /// 创建参数Sql对象
+        /// </summary>
+        /// <param name="name">名称</param>
+        /// <param name="value"></param>
+        /// <returns>特殊格式名称</returns>
+        Sqled GetParamterSqled(string name, object value);
+
+        /// <summary>
+        /// 创建时间类型参数Sql对象
+        /// </summary>
+        /// <param name="name">名称</param>
+        /// <param name="value"></param>
+        /// <returns>特殊格式名称</returns>
+        Sqled GetTimeParamterSqled(string name, object value);
+
+        #endregion
+
+        #region 游标
+
+        /// <summary>
+        /// 附加游标
+        /// </summary>
+        /// <returns>特殊格式名称</returns>
+        Sqled AppendOffset(Sqled sqlSet, int? take, int? skip);
+
+        #endregion
+
+        #region 类型
 
         /// <summary>
         /// 获取数据库特定类型名称（包含自增长标识）
@@ -45,6 +81,8 @@ namespace Delly.DBunny.Core
         /// <param name="precision">精度</param>
         /// <returns>数据库特定类型名称</returns>
         string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0);
+
+        #endregion
 
         #region 数据库
 

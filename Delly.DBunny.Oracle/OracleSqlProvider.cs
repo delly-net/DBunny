@@ -130,6 +130,43 @@ namespace Delly.DBunny.Oracle
             }
         }
 
+        /// <summary>
+        /// 获取参数 Sql对象
+        /// </summary>
+        /// <param name="name">参数名称</param>
+        /// <param name="value">参数值</param>
+        /// <returns>参数 Sql 对象</returns>
+        public Sqled GetParamterSqled(string name, object value)
+        {
+            return $":{name}".ToSql().Set(name, value);
+        }
+
+        /// <summary>
+        /// 获取时间参数 Sql对象
+        /// </summary>
+        /// <param name="name">参数名称</param>
+        /// <param name="value">时间值</param>
+        /// <returns>参数 Sql 对象</returns>
+        public Sqled GetTimeParamterSqled(string name, object value)
+        {
+            return GetParamterSqled(name, value);
+        }
+
+        /// <summary>
+        /// 附加游标
+        /// </summary>
+        /// <param name="sqled">Sql 对象</param>
+        /// <param name="take">取值数量</param>
+        /// <param name="skip">跳过数量</param>
+        /// <returns>附加游标后的 Sql 对象</returns>
+        public Sqled AppendOffset(Sqled sqled, int? take, int? skip)
+        {
+            if (!take.HasValue) { return sqled; }
+            var sb = sqled.Builder;
+            sb.Append($" OFFSET {skip ?? 0} ROWS FETCH NEXT {take.Value} ROWS ONLY");
+            return sqled;
+        }
+
         #region 数据库
 
         /// <summary>
