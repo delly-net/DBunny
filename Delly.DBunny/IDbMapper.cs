@@ -16,6 +16,10 @@ namespace Delly.DBunny
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
+#if NETSTANDARD2_0
         T Map(DbDataReader reader);
+#else
+        T? Map(DbDataReader reader);
+#endif
     }
 }
