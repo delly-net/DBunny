@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
 		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
-		<Version>2026.5.6</Version>
+		<Version>2026.5.7</Version>
 		<Authors>Delly.Net</Authors>
 		<Description>SQLite provider for Delly.DBunny</Description>
 		<PackageIcon>Bunny_128.png</PackageIcon>
