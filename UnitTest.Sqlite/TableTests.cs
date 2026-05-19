@@ -459,7 +459,7 @@ public class TableTests : IDisposable
     private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
         var columnDesciptors = columns.ToList();
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 

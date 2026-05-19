@@ -518,12 +518,13 @@ public class CrudTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true },
             new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "DATETIME", PrimaryKeyFlag = false, NullableFlag = false }
         };
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, "Users", columnDesciptors);
+        var tableDesciptor = new DbTableDesciptor { TableName = "Users" };
+        var createTableSql = _provider.SqlProvider.CreateTable(tableDesciptor, columnDesciptors);
 
         // Print column definitions for debugging
         foreach (var col in columnDesciptors)
         {
-            var colDef = _provider.SqlProvider.CreateTableColumnDefine(col.ColumnName, col.ColumnType, col.PrimaryKeyFlag, col.NullableFlag);
+            var colDef = _provider.SqlProvider.CreateTableColumnDefine(col);
             Console.WriteLine($"Column: {col.ColumnName} -> {colDef.Sql}");
         }
 

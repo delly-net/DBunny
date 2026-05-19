@@ -101,7 +101,11 @@ namespace Delly.DBunny.Oracle
         /// <param name="connection">数据库连接</param>
         /// <param name="schema">Schema 名称</param>
         /// <returns>Schema 名称，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        public async Task<string> GetSchemaAsync(DbConnection connection, string schema)
+#else
         public async Task<string?> GetSchemaAsync(DbConnection connection, string schema)
+#endif
         {
             var schemas = new List<string>();
             var sql = SqlProvider.GetSchemas(schema);
@@ -145,7 +149,11 @@ namespace Delly.DBunny.Oracle
         /// <param name="connection">数据库连接</param>
         /// <param name="tableDesciptor">表描述符</param>
         /// <returns>表描述符，若不存在则返回 null</returns>
+#if NETSTANDARD2_0
+        public async Task<DbTableDesciptor> GetTableAsync(DbConnection connection, DbTableDesciptor tableDesciptor)
+#else
         public async Task<DbTableDesciptor?> GetTableAsync(DbConnection connection, DbTableDesciptor tableDesciptor)
+#endif
         {
             var tables = new List<DbTableDesciptor>();
             var sql = SqlProvider.GetTable(tableDesciptor);
@@ -203,7 +211,11 @@ namespace Delly.DBunny.Oracle
         /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">列名称</param>
         /// <returns>列描述符，若不存在则返回 null</returns>
+#if NETSTANDARD2_0
+        public async Task<DbColumnDesciptor> GetColumnAsync(DbConnection connection, DbTableDesciptor tableDesciptor, string column)
+#else
         public async Task<DbColumnDesciptor?> GetColumnAsync(DbConnection connection, DbTableDesciptor tableDesciptor, string column)
+#endif
         {
             var columns = new List<DbColumnDesciptor>();
             var sql = SqlProvider.GetColumn(tableDesciptor, column);
@@ -269,7 +281,11 @@ namespace Delly.DBunny.Oracle
         /// <param name="connection">数据库连接</param>
         /// <param name="indexDesciptor">索引描述符</param>
         /// <returns>索引描述符，若不存在则返回 null</returns>
+#if NETSTANDARD2_0
+        public async Task<DbIndexDesciptor> GetIndexeAsync(DbConnection connection, DbIndexDesciptor indexDesciptor)
+#else
         public async Task<DbIndexDesciptor?> GetIndexeAsync(DbConnection connection, DbIndexDesciptor indexDesciptor)
+#endif
         {
             var indexes = new List<DbIndexDesciptor>();
             var sql = SqlProvider.GetIndex(indexDesciptor);

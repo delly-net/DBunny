@@ -103,11 +103,11 @@ public class TableTests : IAsyncLifetime
             new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "TIMESTAMP", PrimaryKeyFlag = false, NullableFlag = false }
         };
 
-        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, columnDesciptors);
 
         // Act
         await ExecuteNonQueryAsync(_connection, createTableSql);
-        var tables = await _provider.GetTables(_connection, _testSchema);
+        var tables = await _provider.GetTablesAsync(_connection, _testSchema);
 
         // Assert
         Assert.Contains(tables, t => t.TableName.ToUpper() == tableName.ToUpper());
@@ -126,7 +126,7 @@ public class TableTests : IAsyncLifetime
         var columnDesciptor = new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Price", ColumnType = "NUMBER(18,2)", PrimaryKeyFlag = false, NullableFlag = true };
         var addColumnSql = _provider.SqlProvider.CreateColumn(columnDesciptor);
         await ExecuteNonQueryAsync(_connection, addColumnSql);
-        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.Contains(columns, c => c.ColumnName.ToUpper() == "PRICE");
@@ -143,9 +143,9 @@ public class TableTests : IAsyncLifetime
             new DbColumnDesciptor { ColumnName = "Status", ColumnType = "VARCHAR2(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var dropColumnSql = _provider.SqlProvider.DropColumn(_testSchema, tableName, "Status");
+        var dropColumnSql = _provider.SqlProvider.DropColumn(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, "Status");
         await ExecuteNonQueryAsync(_connection, dropColumnSql);
-        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(columns, c => c.ColumnName.ToUpper() == "STATUS");
@@ -161,9 +161,9 @@ public class TableTests : IAsyncLifetime
             new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var renameColumnSql = _provider.SqlProvider.RenameColumn(_testSchema, tableName, "OldName", "NewName");
+        var renameColumnSql = _provider.SqlProvider.RenameColumn(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, "OldName", "NewName");
         await ExecuteNonQueryAsync(_connection, renameColumnSql);
-        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(columns, c => c.ColumnName.ToUpper() == "OLDNAME");
@@ -183,7 +183,7 @@ public class TableTests : IAsyncLifetime
         var indexDesciptor = new DbIndexDesciptor { SchemaName = _testSchema, TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
         var createIndexSql = _provider.SqlProvider.CreateIndex(indexDesciptor);
         await ExecuteNonQueryAsync(_connection, createIndexSql);
-        var indexes = await _provider.GetIndexes(_connection, _testSchema, tableName);
+        var indexes = await _provider.GetIndexesAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.Contains(indexes, i => i.IndexName.ToUpper() == $"{tableName}_Email_IDX".ToUpper());
@@ -200,7 +200,7 @@ public class TableTests : IAsyncLifetime
             new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "NUMBER(10)", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Act
-        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.Equal(3, columns.Count);
@@ -233,7 +233,7 @@ public class TableTests : IAsyncLifetime
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
-        var tables = await _provider.GetTables(_connection, _testSchema);
+        var tables = await _provider.GetTablesAsync(_connection, _testSchema);
 
         // Assert
         Assert.Contains(tables, t => t.TableName.ToUpper() == "TABLE1");
@@ -277,7 +277,7 @@ public class TableTests : IAsyncLifetime
     public async Task GetSchemas_ShouldReturnUserSchemas()
     {
         // Act
-        var schemas = await _provider.GetSchemas(_connection);
+        var schemas = await _provider.GetSchemasAsync(_connection);
 
         // Assert
         Assert.NotNull(schemas);
@@ -299,7 +299,7 @@ public class TableTests : IAsyncLifetime
             .Set("value", "Test Value");
         await ExecuteNonQueryAsync(_connection, insertSql);
 
-        var copyColumnSql = _provider.SqlProvider.CopyColumn(_testSchema, tableName, "OriginalValue", "CopiedValue", "VARCHAR2(100)");
+        var copyColumnSql = _provider.SqlProvider.CopyColumn(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, "OriginalValue", "CopiedValue", "VARCHAR2(100)");
         var alterTableSql = new Sqled($"ALTER TABLE \"{_testSchema}\".\"{tableName}\" ADD (\"CopiedValue\" VARCHAR2(100))");
         await ExecuteNonQueryAsync(_connection, alterTableSql);
         await ExecuteNonQueryAsync(_connection, copyColumnSql);
@@ -314,7 +314,7 @@ public class TableTests : IAsyncLifetime
     private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
         var columnDesciptors = columns.ToList();
-        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 
@@ -346,13 +346,13 @@ public class TableTests : IAsyncLifetime
         {
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false }
         };
-        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
 
         // Act
-        var dropTableSql = _provider.SqlProvider.DropTable(_testSchema, tableName);
+        var dropTableSql = _provider.SqlProvider.DropTable(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
         await ExecuteNonQueryAsync(_connection, dropTableSql);
-        var tables = await _provider.GetTables(_connection, _testSchema);
+        var tables = await _provider.GetTablesAsync(_connection, _testSchema);
 
         // Assert
         Assert.DoesNotContain(tables, t => t.TableName.ToUpper() == tableName.ToUpper());
@@ -368,7 +368,7 @@ public class TableTests : IAsyncLifetime
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false },
             new DbColumnDesciptor { ColumnName = "Value", ColumnType = "NUMBER(10)", PrimaryKeyFlag = false, NullableFlag = false }
         };
-        var createTableSql = _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
 
         var indexDesciptor = new DbIndexDesciptor { SchemaName = _testSchema, TableName = tableName, IndexName = "Value", UniqueFlag = false, ColumnName = "Value" };
@@ -376,9 +376,9 @@ public class TableTests : IAsyncLifetime
         await ExecuteNonQueryAsync(_connection, createIndexSql);
 
         // Act
-        var dropIndexSql = _provider.SqlProvider.DropIndex(_testSchema, tableName, "Value");
+        var dropIndexSql = _provider.SqlProvider.DropIndex(new DbIndexDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Value", IndexName = "" });
         await ExecuteNonQueryAsync(_connection, dropIndexSql);
-        var indexes = await _provider.GetIndexes(_connection, _testSchema, tableName);
+        var indexes = await _provider.GetIndexesAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(indexes, i => i.IndexName.ToUpper() == $"{tableName}_Value_IDX".ToUpper());
@@ -493,9 +493,12 @@ public class TableTests : IAsyncLifetime
     public void SqlProvider_CreateTableColumnDefine_ShouldReturnCorrectDefinition()
     {
         // Act
-        var primaryKeyColumn = _provider.SqlProvider.CreateTableColumnDefine("Id", "NUMBER(10)", true, false);
-        var nullableColumn = _provider.SqlProvider.CreateTableColumnDefine("Name", "VARCHAR2(100)", false, false);
-        var nullableTrueColumn = _provider.SqlProvider.CreateTableColumnDefine("Age", "NUMBER(10)", false, true);
+        var primaryKeyColumn = _provider.SqlProvider.CreateTableColumnDefine(
+            new DbColumnDesciptor { ColumnName = "Id", ColumnType = "NUMBER(10)", PrimaryKeyFlag = true, NullableFlag = false });
+        var nullableColumn = _provider.SqlProvider.CreateTableColumnDefine(
+            new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR2(100)", PrimaryKeyFlag = false, NullableFlag = false });
+        var nullableTrueColumn = _provider.SqlProvider.CreateTableColumnDefine(
+            new DbColumnDesciptor { ColumnName = "Age", ColumnType = "NUMBER(10)", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Assert
         Assert.Equal("\"Id\" NUMBER(10) NOT NULL PRIMARY KEY", primaryKeyColumn.Sql);
@@ -567,7 +570,7 @@ public class TableTests : IAsyncLifetime
         // Act
         var modifyColumnSql = _provider.SqlProvider.ModifyColumn(column, columnTarget);
         await ExecuteNonQueryAsync(_connection, modifyColumnSql);
-        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         var scoreColumn = columns.First(c => c.ColumnName.ToUpper() == "SCORE");

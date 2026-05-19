@@ -435,7 +435,7 @@ public class CrudTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true },
             new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "TEXT(32)", PrimaryKeyFlag = false, NullableFlag = false }
         };
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, "Users", columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = "Users" }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
     }
 

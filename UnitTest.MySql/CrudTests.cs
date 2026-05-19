@@ -470,7 +470,7 @@ public class CrudTests : IAsyncLifetime
         await ExecuteNonQueryAsync(_connection, _provider.SqlProvider.CreateIndex(indexDesciptor1));
         await ExecuteNonQueryAsync(_connection, _provider.SqlProvider.CreateIndex(indexDesciptor2));
 
-        var indexes = await _provider.GetIndexes(_connection, _testSchema, tableName);
+        var indexes = await _provider.GetIndexesAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.Equal(2, indexes.Count);
@@ -494,10 +494,10 @@ public class CrudTests : IAsyncLifetime
             new DbColumnDesciptor { SchemaName = _testSchema, TableName = tableName, ColumnName = "Score", ColumnType = "FLOAT", PrimaryKeyFlag = false, NullableFlag = true },
         };
 
-        await ExecuteNonQueryAsync(_connection, _provider.SqlProvider.CreateTable(_testSchema, tableName, columnDesciptors));
+        await ExecuteNonQueryAsync(_connection, _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName }, columnDesciptors));
 
         // Act
-        var columns = await _provider.GetColumns(_connection, _testSchema, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = _testSchema, TableName = tableName });
 
         // Assert
         Assert.Equal(4, columns.Count);

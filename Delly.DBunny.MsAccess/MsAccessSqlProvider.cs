@@ -32,6 +32,20 @@ namespace Delly.DBunny.MsAccess
         }
 
         /// <summary>
+        /// 获取数据库特定类型名称（包含自增长标识）
+        /// </summary>
+        /// <param name="columnType">列类型</param>
+        /// <param name="typeCode">类型代码</param>
+        /// <param name="autoIncrementFlag">自增长标识</param>
+        /// <param name="length">长度</param>
+        /// <param name="precision">精度</param>
+        /// <returns>Access 类型名称</returns>
+        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        {
+            return GetSpecialTypeName(typeCode, length, precision);
+        }
+
+        /// <summary>
         /// 获取特有类型名称
         /// </summary>
         /// <param name="typeCode"></param>
@@ -152,6 +166,16 @@ namespace Delly.DBunny.MsAccess
         }
 
         /// <summary>
+        /// 获取单个 Schema
+        /// </summary>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>获取 Schema 的 SQL 命令</returns>
+        public Sqled GetSchemas(string schema)
+        {
+            throw new NotSupportedException("Access does not support schemas. HasSchema is false.");
+        }
+
+        /// <summary>
         /// 创建 Schema
         /// </summary>
         /// <param name="schema"></param>
@@ -187,15 +211,27 @@ namespace Delly.DBunny.MsAccess
         }
 
         /// <summary>
+        /// 获取单个表
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <returns>获取表的 SQL 命令</returns>
+        public Sqled GetTable(DbTableDesciptor tableDesciptor)
+        {
+            return $"SELECT name FROM MSysObjects WHERE name = '{tableDesciptor.TableName}' AND type = 1 AND flags = 0";
+        }
+
+        /// <summary>
         /// 获取创建表时的字段定义
         /// </summary>
-        /// <param name="column"></param>
-        /// <param name="columnType"></param>
-        /// <param name="primaryKey"></param>
-        /// <param name="nullable"></param>
-        /// <returns></returns>
-        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        /// <param name="columnDesciptor">列描述符</param>
+        /// <returns>字段定义 SQL</returns>
+        public Sqled CreateTableColumnDefine(DbColumnDesciptor columnDesciptor)
         {
+            var column = columnDesciptor.ColumnName;
+            var columnType = columnDesciptor.ColumnType;
+            var primaryKey = columnDesciptor.PrimaryKeyFlag;
+            var nullable = columnDesciptor.NullableFlag;
+
             var sb = new StringBuilder();
             sb.Append(GetSpecialName(column));
             sb.Append(" ");
@@ -229,12 +265,12 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 创建表
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="columnDesciptors"></param>
         /// <returns></returns>
-        public Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors)
+        public Sqled CreateTable(DbTableDesciptor tableDesciptor, IList<DbColumnDesciptor> columnDesciptors)
         {
+            var table = tableDesciptor.TableName;
             var sql = new Sqled();
             sql.Builder.Append($"CREATE TABLE {GetSpecialName(table)}(");
             for (int i = 0; i < columnDesciptors.Count; i++)
@@ -244,7 +280,7 @@ namespace Delly.DBunny.MsAccess
                     sql.Builder.Append(", ");
                 }
                 var column = columnDesciptors[i];
-                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column);
                 sql.Builder.Append(columnDefine.Sql);
             }
             sql.Builder.AppendLine(")");
@@ -254,12 +290,11 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 删除表
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns></returns>
-        public Sqled DropTable(string schema, string table)
+        public Sqled DropTable(DbTableDesciptor tableDesciptor)
         {
-            return $"DROP TABLE {GetSpecialName(table)};";
+            return $"DROP TABLE {GetSpecialName(tableDesciptor.TableName)};";
         }
 
         #endregion
@@ -269,12 +304,24 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns></returns>
-        public Sqled GetColumns(string schema, string table)
+        public Sqled GetColumns(DbTableDesciptor tableDesciptor)
         {
+            var table = tableDesciptor.TableName;
             return $"SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_FLAGS FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{table}'";
+        }
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
+        public Sqled GetColumn(DbTableDesciptor tableDesciptor, string column)
+        {
+            var table = tableDesciptor.TableName;
+            return $"SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_FLAGS FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{table}' AND COLUMN_NAME = '{column}'";
         }
 
         /// <summary>
@@ -284,7 +331,6 @@ namespace Delly.DBunny.MsAccess
         /// <returns></returns>
         public Sqled CreateColumn(DbColumnDesciptor columnDesciptor)
         {
-            var schema = columnDesciptor.SchemaName;
             var table = columnDesciptor.TableName;
             var column = columnDesciptor.ColumnName;
             var columnType = columnDesciptor.ColumnType;
@@ -319,12 +365,11 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 重命名列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">原列名</param>
+        /// <param name="columnTarget">新列名</param>
         /// <returns></returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        public Sqled RenameColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget)
         {
             throw new NotSupportedException("Access does not support renaming columns directly. Use DROP COLUMN and ADD COLUMN instead.");
         }
@@ -343,26 +388,26 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 复制列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
-        /// <param name="columnTarget"></param>
-        /// <param name="columnType"></param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">原列名</param>
+        /// <param name="columnTarget">目标列名</param>
+        /// <param name="columnType">列类型</param>
         /// <returns></returns>
-        public Sqled CopyColumn(string schema, string table, string column, string columnTarget, string columnType)
+        public Sqled CopyColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget, string columnType)
         {
+            var table = tableDesciptor.TableName;
             return $"UPDATE {GetSpecialName(table)} SET {GetSpecialName(columnTarget)} = {GetSpecialName(column)};";
         }
 
         /// <summary>
         /// 删除列
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名</param>
         /// <returns></returns>
-        public Sqled DropColumn(string schema, string table, string column)
+        public Sqled DropColumn(DbTableDesciptor tableDesciptor, string column)
         {
+            var table = tableDesciptor.TableName;
             return $"ALTER TABLE {GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
         }
 
@@ -373,12 +418,24 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 获取表的所有索引
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns></returns>
-        public Sqled GetIndexes(string schema, string table)
+        public Sqled GetIndexes(DbTableDesciptor tableDesciptor)
         {
+            var table = tableDesciptor.TableName;
             return $"SELECT IndexName, Name, Position FROM MSysIndexColumns INNER JOIN MSysIndexes ON MSysIndexColumns.Id = MSysIndexes.Id WHERE MSysIndexColumns.ObjectId = (SELECT id FROM MSysObjects WHERE name = '{table}' AND type = 1)";
+        }
+
+        /// <summary>
+        /// 获取单个索引
+        /// </summary>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>获取索引的 SQL 命令</returns>
+        public Sqled GetIndex(DbIndexDesciptor indexDesciptor)
+        {
+            var indexName = indexDesciptor.IndexName;
+            var table = indexDesciptor.TableName;
+            return $"SELECT IndexName, Name, Position FROM MSysIndexColumns INNER JOIN MSysIndexes ON MSysIndexColumns.Id = MSysIndexes.Id WHERE MSysIndexColumns.ObjectId = (SELECT id FROM MSysObjects WHERE name = '{table}' AND type = 1) AND IndexName = '{indexName}'";
         }
 
         /// <summary>
@@ -388,7 +445,6 @@ namespace Delly.DBunny.MsAccess
         /// <returns></returns>
         public Sqled CreateIndex(DbIndexDesciptor indexDesciptor)
         {
-            var schema = indexDesciptor.SchemaName;
             var table = indexDesciptor.TableName;
             var column = indexDesciptor.ColumnName;
             var unique = indexDesciptor.UniqueFlag;
@@ -406,13 +462,16 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 删除索引
         /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
-        /// <param name="column"></param>
+        /// <param name="indexDesciptor">索引描述符</param>
         /// <returns></returns>
-        public Sqled DropIndex(string schema, string table, string column)
+        public Sqled DropIndex(DbIndexDesciptor indexDesciptor)
         {
-            return $"DROP INDEX {table}_{column}_IDX ON {GetSpecialName(table)};";
+            var indexName = indexDesciptor.IndexName;
+            if (string.IsNullOrEmpty(indexName))
+            {
+                indexName = $"{indexDesciptor.TableName}_{indexDesciptor.ColumnName}_IDX";
+            }
+            return $"DROP INDEX {indexName} ON {GetSpecialName(indexDesciptor.TableName)};";
         }
 
         #endregion

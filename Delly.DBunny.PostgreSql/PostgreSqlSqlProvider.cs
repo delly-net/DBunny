@@ -376,6 +376,51 @@ ORDER BY
         }
 
         /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
+        public Sqled GetColumn(DbTableDesciptor tableDesciptor, string column)
+        {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
+            return $@"
+SELECT
+    c.column_name,
+    c.data_type,
+    c.is_nullable,
+    CASE
+        WHEN pk.column_name IS NOT NULL THEN 'PRI'
+        ELSE ''
+    END AS column_key
+FROM
+    information_schema.columns c
+LEFT JOIN (
+    SELECT
+        ku.table_schema,
+        ku.table_name,
+        ku.column_name
+    FROM
+        information_schema.table_constraints tc
+    JOIN
+        information_schema.key_column_usage ku
+        ON tc.constraint_name = ku.constraint_name
+        AND tc.table_schema = ku.table_schema
+    WHERE
+        tc.constraint_type = 'PRIMARY KEY'
+) pk ON c.table_schema = pk.table_schema
+    AND c.table_name = pk.table_name
+    AND c.column_name = pk.column_name
+WHERE
+    c.table_schema = '{schema}'
+    AND c.table_name = '{table}'
+    AND c.column_name = '{column}'
+ORDER BY
+    c.ordinal_position;";
+        }
+
+        /// <summary>
         /// 创建列
         /// </summary>
         /// <param name="columnDesciptor">列描述符</param>

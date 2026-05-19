@@ -78,7 +78,7 @@ namespace Delly.DBunny.Sqlite
                 case TypeCode.String:
                     if (length > 0) { return $"TEXT({length})"; }
                     return "TEXT";
-                default: return string.Empty;
+                default: throw new NotSupportedException($"Type code '{typeCode}' not supported.");
             }
         }
 
@@ -110,7 +110,7 @@ namespace Delly.DBunny.Sqlite
                     return "TEXT";
                 case DbColumnType.TEXT:
                     return "TEXT";
-                default: return string.Empty;
+                default: throw new NotSupportedException($"Column type '{columnType}' not supported.");
             }
         }
 

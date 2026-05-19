@@ -1,9 +1,11 @@
 using Delly.DBunny.Core;
+using Delly.DBunny.Core.Providing.Extension;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.OleDb;
+using System.Linq;
 #if !NETSTANDARD2_0
 using System.Runtime.Versioning;
 #endif
@@ -120,12 +122,26 @@ namespace Delly.DBunny.MsAccess
         /// <summary>
         /// 获取所有 Schema
         /// </summary>
-        /// <param name="connection"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Task<IReadOnlyList<string>> GetSchemas(DbConnection connection)
+        /// <param name="connection">数据库连接</param>
+        /// <returns>Schema 名称列表</returns>
+        public Task<IReadOnlyList<string>> GetSchemasAsync(DbConnection connection)
         {
-            throw new NotImplementedException();
+            return Task.FromResult<IReadOnlyList<string>>(new List<string> { "" });
+        }
+
+        /// <summary>
+        /// 获取单个 Schema
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>Schema 名称，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        public Task<string> GetSchemaAsync(DbConnection connection, string schema)
+#else
+        public Task<string?> GetSchemaAsync(DbConnection connection, string schema)
+#endif
+        {
+            return Task.FromResult(string.IsNullOrEmpty(schema) ? schema : null);
         }
 
         /// <summary>
@@ -134,7 +150,7 @@ namespace Delly.DBunny.MsAccess
         /// <param name="connection"></param>
         /// <param name="schema"></param>
         /// <returns></returns>
-        public async Task<IReadOnlyList<DbTableDesciptor>> GetTables(DbConnection connection, string schema)
+        public async Task<IReadOnlyList<DbTableDesciptor>> GetTablesAsync(DbConnection connection, string schema)
         {
             var tables = new List<DbTableDesciptor>();
 
@@ -159,19 +175,50 @@ namespace Delly.DBunny.MsAccess
                 }
             }
 
-            return await Task.FromResult<IReadOnlyList<DbTableDesciptor>>(tables);
+            return tables;
+        }
+
+        /// <summary>
+        /// 获取单个表
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <returns>表描述符，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        public async Task<DbTableDesciptor> GetTableAsync(DbConnection connection, DbTableDesciptor tableDesciptor)
+#else
+        public async Task<DbTableDesciptor?> GetTableAsync(DbConnection connection, DbTableDesciptor tableDesciptor)
+#endif
+        {
+            var oleDbConnection = (OleDbConnection)connection;
+            var dataTable = oleDbConnection.GetSchema("Tables");
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var tableName = row["TABLE_NAME"]?.ToString();
+                if (tableName == tableDesciptor.TableName)
+                {
+                    return tableDesciptor;
+                }
+            }
+
+#if NETSTANDARD2_0
+            return null;
+#else
+            return await Task.FromResult<DbTableDesciptor?>(null);
+#endif
         }
 
         /// <summary>
         /// 获取表中的所有列
         /// </summary>
         /// <param name="connection"></param>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns></returns>
-        public async Task<IReadOnlyList<DbColumnDesciptor>> GetColumns(DbConnection connection, string schema, string table)
+        public async Task<IReadOnlyList<DbColumnDesciptor>> GetColumnsAsync(DbConnection connection, DbTableDesciptor tableDesciptor)
         {
             var columns = new List<DbColumnDesciptor>();
+            var table = tableDesciptor.TableName;
 
             // 使用 GetSchema 获取列信息
             var oleDbConnection = (OleDbConnection)connection;
@@ -208,19 +255,41 @@ namespace Delly.DBunny.MsAccess
                 });
             }
 
-            return await Task.FromResult<IReadOnlyList<DbColumnDesciptor>>(columns);
+            return columns;
+        }
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>列描述符，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        public async Task<DbColumnDesciptor> GetColumnAsync(DbConnection connection, DbTableDesciptor tableDesciptor, string column)
+#else
+        public async Task<DbColumnDesciptor?> GetColumnAsync(DbConnection connection, DbTableDesciptor tableDesciptor, string column)
+#endif
+        {
+            var columns = await GetColumnsAsync(connection, tableDesciptor);
+            var foundColumn = columns.FirstOrDefault(c => c.ColumnName == column);
+#if NETSTANDARD2_0
+            return foundColumn;
+#else
+            return await Task.FromResult(foundColumn);
+#endif
         }
 
         /// <summary>
         /// 获取表中的所有索引
         /// </summary>
         /// <param name="connection"></param>
-        /// <param name="schema"></param>
-        /// <param name="table"></param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns></returns>
-        public async Task<IReadOnlyList<DbIndexDesciptor>> GetIndexes(DbConnection connection, string schema, string table)
+        public async Task<IReadOnlyList<DbIndexDesciptor>> GetIndexesAsync(DbConnection connection, DbTableDesciptor tableDesciptor)
         {
             var indexes = new List<DbIndexDesciptor>();
+            var table = tableDesciptor.TableName;
 
             // 使用 GetSchema 获取索引信息
             var oleDbConnection = (OleDbConnection)connection;
@@ -243,7 +312,28 @@ namespace Delly.DBunny.MsAccess
                 });
             }
 
-            return await Task.FromResult<IReadOnlyList<DbIndexDesciptor>>(indexes);
+            return indexes;
+        }
+
+        /// <summary>
+        /// 获取单个索引信息
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>索引描述符，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        public async Task<DbIndexDesciptor> GetIndexeAsync(DbConnection connection, DbIndexDesciptor indexDesciptor)
+#else
+        public async Task<DbIndexDesciptor?> GetIndexeAsync(DbConnection connection, DbIndexDesciptor indexDesciptor)
+#endif
+        {
+            var indexes = await GetIndexesAsync(connection, indexDesciptor);
+            var foundIndex = indexes.FirstOrDefault(i => i.IndexName == indexDesciptor.IndexName);
+#if NETSTANDARD2_0
+            return foundIndex;
+#else
+            return await Task.FromResult(foundIndex);
+#endif
         }
     }
 }

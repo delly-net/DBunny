@@ -32,11 +32,11 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "TIMESTAMP", PrimaryKeyFlag = false, NullableFlag = false }
         };
 
-        var createTableSql = _fixture.Provider.SqlProvider.CreateTable("public", tableName, columnDesciptors);
+        var createTableSql = _fixture.Provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = "public", TableName = tableName }, columnDesciptors);
 
         // Act
         await ExecuteNonQueryAsync(_fixture.Connection, createTableSql);
-        var tables = await _fixture.Provider.GetTables(_fixture.Connection, "public");
+        var tables = await _fixture.Provider.GetTablesAsync(_fixture.Connection, "public");
 
         // Assert
         Assert.Contains(tables, t => t.TableName == tableName);
@@ -55,7 +55,7 @@ public class TableTests : IDisposable
         var columnDesciptor = new DbColumnDesciptor { SchemaName = "public", TableName = tableName, ColumnName = "Price", ColumnType = "NUMERIC(10,2)", PrimaryKeyFlag = false, NullableFlag = true };
         var addColumnSql = _fixture.Provider.SqlProvider.CreateColumn(columnDesciptor);
         await ExecuteNonQueryAsync(_fixture.Connection, addColumnSql);
-        var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
+        var columns = await _fixture.Provider.GetColumnsAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         Assert.Contains(columns, c => c.ColumnName == "Price");
@@ -72,9 +72,9 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Status", ColumnType = "VARCHAR(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var dropColumnSql = _fixture.Provider.SqlProvider.DropColumn("public", tableName, "Status");
+        var dropColumnSql = _fixture.Provider.SqlProvider.DropColumn(new DbTableDesciptor { SchemaName = "public", TableName = tableName }, "Status");
         await ExecuteNonQueryAsync(_fixture.Connection, dropColumnSql);
-        var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
+        var columns = await _fixture.Provider.GetColumnsAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(columns, c => c.ColumnName == "Status");
@@ -90,9 +90,9 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var renameColumnSql = _fixture.Provider.SqlProvider.RenameColumn("public", tableName, "OldName", "NewName");
+        var renameColumnSql = _fixture.Provider.SqlProvider.RenameColumn(new DbTableDesciptor { SchemaName = "public", TableName = tableName }, "OldName", "NewName");
         await ExecuteNonQueryAsync(_fixture.Connection, renameColumnSql);
-        var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
+        var columns = await _fixture.Provider.GetColumnsAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(columns, c => c.ColumnName == "OldName");
@@ -112,7 +112,7 @@ public class TableTests : IDisposable
         var indexDesciptor = new DbIndexDesciptor { SchemaName = "public", TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
         var createIndexSql = _fixture.Provider.SqlProvider.CreateIndex(indexDesciptor);
         await ExecuteNonQueryAsync(_fixture.Connection, createIndexSql);
-        var indexes = await _fixture.Provider.GetIndexes(_fixture.Connection, "public", tableName);
+        var indexes = await _fixture.Provider.GetIndexesAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         Assert.Contains(indexes, i => i.IndexName.ToLower().Contains("email") && i.UniqueFlag);
@@ -129,7 +129,7 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Act
-        var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
+        var columns = await _fixture.Provider.GetColumnsAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         Assert.Equal(3, columns.Count);
@@ -162,7 +162,7 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
-        var tables = await _fixture.Provider.GetTables(_fixture.Connection, "public");
+        var tables = await _fixture.Provider.GetTablesAsync(_fixture.Connection, "public");
 
         // Assert
         Assert.Contains(tables, t => t.TableName == "Table1");
@@ -174,7 +174,7 @@ public class TableTests : IDisposable
     public async Task GetSchemas_ShouldReturnSchemas()
     {
         // Act
-        var schemas = await _fixture.Provider.GetSchemas(_fixture.Connection);
+        var schemas = await _fixture.Provider.GetSchemasAsync(_fixture.Connection);
 
         // Assert
         Assert.Contains("public", schemas);
@@ -189,7 +189,7 @@ public class TableTests : IDisposable
         // Act
         var createSchemaSql = _fixture.Provider.SqlProvider.CreateSchema(schemaName, null!);
         await ExecuteNonQueryAsync(_fixture.Connection, createSchemaSql);
-        var schemas = await _fixture.Provider.GetSchemas(_fixture.Connection);
+        var schemas = await _fixture.Provider.GetSchemasAsync(_fixture.Connection);
 
         // Assert
         Assert.Contains(schemaName, schemas);
@@ -274,7 +274,7 @@ public class TableTests : IDisposable
     private async Task CreateSimpleTableAsync(string tableName, params DbColumnDesciptor[] columns)
     {
         var columnDesciptors = columns.ToList();
-        var createTableSql = _fixture.Provider.SqlProvider.CreateTable("public", tableName, columnDesciptors);
+        var createTableSql = _fixture.Provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = "public", TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_fixture.Connection, createTableSql);
     }
 
@@ -304,13 +304,13 @@ public class TableTests : IDisposable
         {
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false }
         };
-        var createTableSql = _fixture.Provider.SqlProvider.CreateTable("public", tableName, columnDesciptors);
+        var createTableSql = _fixture.Provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = "public", TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_fixture.Connection, createTableSql);
 
         // Act
-        var dropTableSql = _fixture.Provider.SqlProvider.DropTable("public", tableName);
+        var dropTableSql = _fixture.Provider.SqlProvider.DropTable(new DbTableDesciptor { SchemaName = "public", TableName = tableName });
         await ExecuteNonQueryAsync(_fixture.Connection, dropTableSql);
-        var tables = await _fixture.Provider.GetTables(_fixture.Connection, "public");
+        var tables = await _fixture.Provider.GetTablesAsync(_fixture.Connection, "public");
 
         // Assert
         Assert.DoesNotContain(tables, t => t.TableName == tableName);
@@ -326,7 +326,7 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false },
             new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = false }
         };
-        var createTableSql = _fixture.Provider.SqlProvider.CreateTable("public", tableName, columnDesciptors);
+        var createTableSql = _fixture.Provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = "public", TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_fixture.Connection, createTableSql);
 
         var indexDesciptor = new DbIndexDesciptor { SchemaName = "public", TableName = tableName, IndexName = "Value", UniqueFlag = false, ColumnName = "Value" };
@@ -334,9 +334,9 @@ public class TableTests : IDisposable
         await ExecuteNonQueryAsync(_fixture.Connection, createIndexSql);
 
         // Act
-        var dropIndexSql = _fixture.Provider.SqlProvider.DropIndex("public", tableName, "Value");
+        var dropIndexSql = _fixture.Provider.SqlProvider.DropIndex(new DbIndexDesciptor { SchemaName = "public", TableName = tableName, ColumnName = "Value", IndexName = "" });
         await ExecuteNonQueryAsync(_fixture.Connection, dropIndexSql);
-        var indexes = await _fixture.Provider.GetIndexes(_fixture.Connection, "public", tableName);
+        var indexes = await _fixture.Provider.GetIndexesAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(indexes, i => i.IndexName.ToLower() == $"{tableName}_Value_IDX".ToLower());
@@ -392,9 +392,9 @@ public class TableTests : IDisposable
     public void SqlProvider_CreateTableColumnDefine_ShouldReturnCorrectDefinition()
     {
         // Act
-        var primaryKeyColumn = _fixture.Provider.SqlProvider.CreateTableColumnDefine("Id", "SERIAL", true, false);
-        var nullableColumn = _fixture.Provider.SqlProvider.CreateTableColumnDefine("Name", "VARCHAR(100)", false, false);
-        var nullableTrueColumn = _fixture.Provider.SqlProvider.CreateTableColumnDefine("Age", "INTEGER", false, true);
+        var primaryKeyColumn = _fixture.Provider.SqlProvider.CreateTableColumnDefine(new DbColumnDesciptor { ColumnName = "Id", ColumnType = "SERIAL", PrimaryKeyFlag = true, NullableFlag = false });
+        var nullableColumn = _fixture.Provider.SqlProvider.CreateTableColumnDefine(new DbColumnDesciptor { ColumnName = "Name", ColumnType = "VARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false });
+        var nullableTrueColumn = _fixture.Provider.SqlProvider.CreateTableColumnDefine(new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Assert
         Assert.Equal("\"Id\" SERIAL NOT NULL PRIMARY KEY", primaryKeyColumn.Sql);
@@ -503,7 +503,7 @@ public class TableTests : IDisposable
         // Act
         var modifyColumnSql = _fixture.Provider.SqlProvider.ModifyColumn(column, columnTarget);
         await ExecuteNonQueryAsync(_fixture.Connection, modifyColumnSql);
-        var columns = await _fixture.Provider.GetColumns(_fixture.Connection, "public", tableName);
+        var columns = await _fixture.Provider.GetColumnsAsync(_fixture.Connection, new DbTableDesciptor { SchemaName = "public", TableName = tableName });
 
         // Assert
         var scoreColumn = columns.First(c => c.ColumnName == "Score");

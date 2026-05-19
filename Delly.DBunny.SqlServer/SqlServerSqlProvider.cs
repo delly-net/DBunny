@@ -32,6 +32,20 @@ namespace Delly.DBunny.SqlServer
         }
 
         /// <summary>
+        /// 获取数据库特定类型名称（包含自增长标识）
+        /// </summary>
+        /// <param name="columnType">列类型</param>
+        /// <param name="typeCode">类型代码</param>
+        /// <param name="autoIncrementFlag">自增长标识</param>
+        /// <param name="length">长度</param>
+        /// <param name="precision">精度</param>
+        /// <returns>SQL Server 类型名称</returns>
+        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        {
+            return GetSpecialTypeName(typeCode, length, precision);
+        }
+
+        /// <summary>
         /// 获取特有类型名称
         /// </summary>
         /// <param name="typeCode">类型代码</param>
@@ -171,6 +185,16 @@ namespace Delly.DBunny.SqlServer
         }
 
         /// <summary>
+        /// 获取单个 Schema
+        /// </summary>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>获取 Schema 的 SQL 命令</returns>
+        public Sqled GetSchemas(string schema)
+        {
+            return $"SELECT name FROM sys.schemas WHERE name = '{schema}';";
+        }
+
+        /// <summary>
         /// 创建 Schema
         /// </summary>
         /// <param name="schema">Schema 名称</param>
@@ -214,15 +238,27 @@ namespace Delly.DBunny.SqlServer
         }
 
         /// <summary>
+        /// 获取单个表
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <returns>获取表的 SQL 命令</returns>
+        public Sqled GetTable(DbTableDesciptor tableDesciptor)
+        {
+            return $"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '{tableDesciptor.SchemaName}' AND TABLE_NAME = '{tableDesciptor.TableName}' AND TABLE_TYPE = 'BASE TABLE';";
+        }
+
+        /// <summary>
         /// 获取创建表时的字段定义
         /// </summary>
-        /// <param name="column">列名称</param>
-        /// <param name="columnType">列类型</param>
-        /// <param name="primaryKey">是否为主键</param>
-        /// <param name="nullable">是否可空</param>
+        /// <param name="columnDesciptor">列描述符</param>
         /// <returns>字段定义 SQL</returns>
-        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        public Sqled CreateTableColumnDefine(DbColumnDesciptor columnDesciptor)
         {
+            var column = columnDesciptor.ColumnName;
+            var columnType = columnDesciptor.ColumnType;
+            var primaryKey = columnDesciptor.PrimaryKeyFlag;
+            var nullable = columnDesciptor.NullableFlag;
+
             if (primaryKey)
             {
                 return $"{GetSpecialName(column)} {columnType} IDENTITY(1,1) NOT NULL PRIMARY KEY";
@@ -233,19 +269,20 @@ namespace Delly.DBunny.SqlServer
         /// <summary>
         /// 创建 表
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="columnDesciptors">列描述符集合</param>
         /// <returns>创建表的 SQL 命令</returns>
-        public Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors)
+        public Sqled CreateTable(DbTableDesciptor tableDesciptor, IList<DbColumnDesciptor> columnDesciptors)
         {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
             var sql = new Sqled();
             sql.Builder.AppendLine($"CREATE TABLE {GetSpecialName(schema)}.{GetSpecialName(table)}(");
             for (int i = 0; i < columnDesciptors.Count; i++)
             {
                 var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column);
                 sql.Builder.Append(columnDefine.Sql);
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
@@ -257,12 +294,11 @@ namespace Delly.DBunny.SqlServer
         /// <summary>
         /// 删除 表
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>删除表的 SQL 命令</returns>
-        public Sqled DropTable(string schema, string table)
+        public Sqled DropTable(DbTableDesciptor tableDesciptor)
         {
-            return $"DROP TABLE IF EXISTS {GetSpecialName(schema)}.{GetSpecialName(table)};";
+            return $"DROP TABLE IF EXISTS {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)};";
         }
 
         #endregion
@@ -272,11 +308,12 @@ namespace Delly.DBunny.SqlServer
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取列的 SQL 命令</returns>
-        public Sqled GetColumns(string schema, string table)
+        public Sqled GetColumns(DbTableDesciptor tableDesciptor)
         {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
             return $@"
 SELECT
     c.name AS column_name,
@@ -294,6 +331,37 @@ LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
     AND kcu.CONSTRAINT_NAME LIKE 'PK%'
 WHERE s.name = '{schema}'
     AND tbl.name = '{table}'
+ORDER BY c.column_id;";
+        }
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
+        public Sqled GetColumn(DbTableDesciptor tableDesciptor, string column)
+        {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
+            return $@"
+SELECT
+    c.name AS column_name,
+    t.name AS data_type,
+    CAST(c.is_nullable AS BIT) AS is_nullable,
+    CAST(CASE WHEN kcu.column_name IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS is_primary_key
+FROM sys.columns c
+INNER JOIN sys.tables tbl ON c.object_id = tbl.object_id
+INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+INNER JOIN sys.schemas s ON tbl.schema_id = s.schema_id
+LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+    ON kcu.TABLE_SCHEMA = s.name
+    AND kcu.TABLE_NAME = tbl.name
+    AND kcu.COLUMN_NAME = c.name
+    AND kcu.CONSTRAINT_NAME LIKE 'PK%'
+WHERE s.name = '{schema}'
+    AND tbl.name = '{table}'
+    AND c.name = '{column}'
 ORDER BY c.column_id;";
         }
 
@@ -317,14 +385,13 @@ ORDER BY c.column_id;";
         /// <summary>
         /// 重命名列
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">新列名</param>
         /// <returns>重命名列的 SQL 命令</returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        public Sqled RenameColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget)
         {
-            return $"EXEC sp_rename '{schema}.{table}.{column}', '{columnTarget}', 'COLUMN';";
+            return $"EXEC sp_rename '{tableDesciptor.SchemaName}.{tableDesciptor.TableName}.{column}', '{columnTarget}', 'COLUMN';";
         }
 
         /// <summary>
@@ -355,27 +422,25 @@ ORDER BY c.column_id;";
         /// <summary>
         /// 复制列
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">目标列名</param>
         /// <param name="columnType">列类型</param>
         /// <returns>复制列的 SQL 命令</returns>
-        public Sqled CopyColumn(string schema, string table, string column, string columnTarget, string columnType)
+        public Sqled CopyColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget, string columnType)
         {
-            return $"UPDATE {GetSpecialName(schema)}.{GetSpecialName(table)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
+            return $"UPDATE {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
         }
 
         /// <summary>
         /// 删除列
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">列名</param>
         /// <returns>删除列的 SQL 命令</returns>
-        public Sqled DropColumn(string schema, string table, string column)
+        public Sqled DropColumn(DbTableDesciptor tableDesciptor, string column)
         {
-            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
+            return $"ALTER TABLE {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)} DROP COLUMN {GetSpecialName(column)};";
         }
 
         #endregion
@@ -385,11 +450,12 @@ ORDER BY c.column_id;";
         /// <summary>
         /// 获取表的所有索引
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取索引的 SQL 命令</returns>
-        public Sqled GetIndexes(string schema, string table)
+        public Sqled GetIndexes(DbTableDesciptor tableDesciptor)
         {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
             return $@"
 SELECT
     i.name AS index_name,
@@ -403,6 +469,29 @@ INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.colu
 WHERE s.name = '{schema}'
     AND t.name = '{table}'
     AND i.name IS NOT NULL
+ORDER BY i.name, ic.key_ordinal;";
+        }
+
+        /// <summary>
+        /// 获取单个索引
+        /// </summary>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>获取索引的 SQL 命令</returns>
+        public Sqled GetIndex(DbIndexDesciptor indexDesciptor)
+        {
+            return $@"
+SELECT
+    i.name AS index_name,
+    i.is_unique AS is_unique,
+    c.name AS column_name
+FROM sys.indexes i
+INNER JOIN sys.tables t ON i.object_id = t.object_id
+INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+INNER JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+WHERE s.name = '{indexDesciptor.SchemaName}'
+    AND t.name = '{indexDesciptor.TableName}'
+    AND i.name = '{indexDesciptor.IndexName}'
 ORDER BY i.name, ic.key_ordinal;";
         }
 
@@ -428,13 +517,16 @@ ORDER BY i.name, ic.key_ordinal;";
         /// <summary>
         /// 删除 索引
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
-        /// <param name="column">列名</param>
+        /// <param name="indexDesciptor">索引描述符</param>
         /// <returns>删除索引的 SQL 命令</returns>
-        public Sqled DropIndex(string schema, string table, string column)
+        public Sqled DropIndex(DbIndexDesciptor indexDesciptor)
         {
-            return $"DROP INDEX IF EXISTS {table}_{column}_IDX ON {GetSpecialName(schema)}.{GetSpecialName(table)};";
+            var indexName = indexDesciptor.IndexName;
+            if (string.IsNullOrEmpty(indexName))
+            {
+                indexName = $"{indexDesciptor.TableName}_{indexDesciptor.ColumnName}_IDX";
+            }
+            return $"DROP INDEX IF EXISTS {indexName} ON {GetSpecialName(indexDesciptor.SchemaName)}.{GetSpecialName(indexDesciptor.TableName)};";
         }
 
         #endregion

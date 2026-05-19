@@ -312,11 +312,12 @@ namespace Delly.DBunny.Oracle
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema">Schema 名称（Oracle 中即用户名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取列的 SQL 命令</returns>
         public Sqled GetColumns(DbTableDesciptor tableDesciptor)
         {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
             // Use case-insensitive comparison for owner, exact for table
             // Owner is case-insensitive, but table name is case-sensitive when quoted
             return $@"
@@ -346,6 +347,48 @@ LEFT JOIN (
 WHERE
     UPPER(c.owner) = UPPER('{schema}')
     AND c.table_name = '{table}'
+ORDER BY
+    c.column_id";
+        }
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
+        public Sqled GetColumn(DbTableDesciptor tableDesciptor, string column)
+        {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
+            return $@"
+SELECT
+    c.column_name,
+    c.data_type,
+    CASE WHEN c.nullable = 'Y' THEN 'Y' ELSE 'N' END AS nullable,
+    CASE
+        WHEN pk.column_name IS NOT NULL THEN 'PRI'
+        ELSE ''
+    END AS column_key
+FROM
+    all_tab_columns c
+LEFT JOIN (
+    SELECT
+        cc.column_name,
+        cc.table_name
+    FROM
+        all_constraints con
+    JOIN
+        all_cons_columns cc ON con.constraint_name = cc.constraint_name
+    WHERE
+        UPPER(con.owner) = UPPER('{schema}')
+        AND con.table_name = '{table}'
+        AND con.constraint_type = 'P'
+) pk ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+WHERE
+    UPPER(c.owner) = UPPER('{schema}')
+    AND c.table_name = '{table}'
+    AND c.column_name = '{column}'
 ORDER BY
     c.column_id";
         }
@@ -438,7 +481,6 @@ ORDER BY
         {
             var schema = tableDesciptor.SchemaName;
             var table = tableDesciptor.TableName;
-        {
             // Use all_indexes and all_ind_columns to get index information
             return $@"
 SELECT
