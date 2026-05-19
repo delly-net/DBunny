@@ -20,7 +20,7 @@ namespace Eazy.Data.Work.Extension
         /// 执行Sql语句
         /// </summary>
         /// <param name="dbWork"></param>
-        /// <param name="sqlSet"></param>
+        /// <param name="sqled"></param>
         /// <returns></returns>
         public static int ExecuteNonQuery(this IDbWork dbWork, Sqled sqled)
         {
@@ -33,7 +33,7 @@ namespace Eazy.Data.Work.Extension
         /// 执行Sql语句
         /// </summary>
         /// <param name="dbWork"></param>
-        /// <param name="sqlSet"></param>
+        /// <param name="sqled"></param>
         /// <returns></returns>
         public static async Task<int> ExecuteNonQueryAsync(this IDbWork dbWork, Sqled sqled)
         {
@@ -50,7 +50,7 @@ namespace Eazy.Data.Work.Extension
         /// 获取DataSet
         /// </summary>
         /// <param name="work"></param>
-        /// <param name="sqlSet"></param>
+        /// <param name="sqled"></param>
         /// <returns></returns>
         public static DataSet GetDataSet(this IDbWork work, Sqled sqled)
         {
@@ -67,7 +67,7 @@ namespace Eazy.Data.Work.Extension
         /// 获取DataSet
         /// </summary>
         /// <param name="work"></param>
-        /// <param name="sqlSet"></param>
+        /// <param name="sqled"></param>
         /// <returns></returns>
         public static async Task<DataSet> GetDataSetAsync(this IDbWork work, Sqled sqled)
         {
@@ -141,7 +141,7 @@ namespace Eazy.Data.Work.Extension
         /// </summary>
         /// <param name="work"></param>
         /// <param name="sqled"></param>
-        /// <param name="actionDbDataReader"></param>
+        /// <param name="func">读取数据的异步函数</param>
         /// <returns></returns>
         public static async Task ExecuteReaderAsync(this IDbWork work, Sqled sqled, Func<DbDataReader, Task> func)
         {
@@ -209,6 +209,7 @@ namespace Eazy.Data.Work.Extension
         /// </summary>
         /// <param name="work"></param>
         /// <param name="sqled"></param>
+        /// <param name="mapper"></param>
         /// <returns></returns>
 #if NETSTANDARD2_0
         public static T FirstOrDefault<T>(this IDbWork work, Sqled sqled, IDbMapper<T> mapper)
@@ -233,6 +234,7 @@ namespace Eazy.Data.Work.Extension
         /// </summary>
         /// <param name="work"></param>
         /// <param name="sqled"></param>
+        /// <param name="mapper"></param>
         /// <returns></returns>
 #if NETSTANDARD2_0
         public static async Task<T> FirstOrDefaultAsync<T>(this IDbWork work, Sqled sqled, IDbMapper<T> mapper)
@@ -261,6 +263,7 @@ namespace Eazy.Data.Work.Extension
         /// </summary>
         /// <param name="work"></param>
         /// <param name="sqled"></param>
+        /// <param name="mapper"></param>
         /// <returns></returns>
         public static List<T> List<T>(this IDbWork work, Sqled sqled, IDbMapper<T> mapper)
         {
@@ -270,7 +273,15 @@ namespace Eazy.Data.Work.Extension
             {
                 while (reader.Read())
                 {
-                    list.Add(mapper.Map(reader));
+                    var item = mapper.Map(reader);
+#if NETSTANDARD2_0
+                    if (item != null)
+#else
+                    if (item is not null)
+#endif
+                    {
+                        list.Add(item);
+                    }
                 }
             });
             return list;
@@ -281,6 +292,7 @@ namespace Eazy.Data.Work.Extension
         /// </summary>
         /// <param name="work"></param>
         /// <param name="sqled"></param>
+        /// <param name="mapper"></param>
         /// <returns></returns>
         public static async Task<List<T>> ListAsync<T>(this IDbWork work, Sqled sqled, IDbMapper<T> mapper)
         {
@@ -290,7 +302,15 @@ namespace Eazy.Data.Work.Extension
             {
                 while (await reader.ReadAsync())
                 {
-                    list.Add(mapper.Map(reader));
+                    var item = mapper.Map(reader);
+#if NETSTANDARD2_0
+                    if (item != null)
+#else
+                    if (item is not null)
+#endif
+                    {
+                        list.Add(item);
+                    }
                 }
             });
             return list;

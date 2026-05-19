@@ -15,7 +15,7 @@ namespace Delly.DBunny
         /// <summary>
         /// Sql异常
         /// </summary>
-        /// <param name="sqlSet"></param>
+        /// <param name="sqled"></param>
         /// <param name="innerException"></param>
         public SqlException(Sqled sqled, Exception innerException) : base($"{innerException.Message}, {sqled}", innerException)
         {

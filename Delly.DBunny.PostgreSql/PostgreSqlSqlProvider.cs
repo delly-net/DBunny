@@ -334,8 +334,7 @@ namespace Delly.DBunny.PostgreSql
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取列的 SQL 命令</returns>
         public Sqled GetColumns(DbTableDesciptor tableDesciptor)
         {
@@ -479,8 +478,7 @@ ORDER BY
         /// <summary>
         /// 复制列
         /// </summary>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">目标列名</param>
         /// <param name="columnType">列类型</param>

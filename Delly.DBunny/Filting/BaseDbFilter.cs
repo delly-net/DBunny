@@ -64,7 +64,7 @@ namespace Delly.DBunny.Filting
         /// <summary>
         /// Sql装载
         /// </summary>
-        /// <param name="sqlSet"></param>
+        /// <param name="sqled"></param>
         /// <returns></returns>
         public Sqled SqlLoading(Sqled sqled)
         {

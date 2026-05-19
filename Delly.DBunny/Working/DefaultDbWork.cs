@@ -65,7 +65,7 @@ namespace Delly.DBunny.Working
         /// <summary>
         /// 获取Sql命令
         /// </summary>
-        /// <param name="conn"></param>
+        /// <param name="dbc"></param>
         /// <param name="sqled"></param>
         /// <returns></returns>
         public DbCommand GetSqlCommand(DbConnection dbc, Sqled sqled)
@@ -285,7 +285,7 @@ namespace Delly.DBunny.Working
         /// <summary>
         /// 命令管理器执行
         /// </summary>
-        /// <param name="dbCommand"></param>
+        /// <param name="command"></param>
         /// <returns></returns>
         private DbCommand CommandExecuting(DbCommand command)
         {
@@ -320,6 +320,11 @@ namespace Delly.DBunny.Working
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// 获取命令
+        /// </summary>
+        /// <param name="sqled">Sqled对象</param>
+        /// <returns>DbCommand对象</returns>
         public DbCommand GetCommand(Sqled sqled)
         {
             throw new NotImplementedException();
