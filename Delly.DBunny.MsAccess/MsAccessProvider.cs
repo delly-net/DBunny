@@ -21,7 +21,7 @@ namespace Delly.DBunny.MsAccess
 #endif
     public sealed class MsAccessProvider : IDbProvider
     {
-        private static readonly Dictionary<int, string> OleDbTypeMap = new Dictionary<int, string>()
+        private static readonly Dictionary<int, string> _oleDbTypeMap = new Dictionary<int, string>()
         {
             { 2, "SMALLINT" },   // SmallInt
             { 3, "INTEGER" },    // Integer
@@ -239,7 +239,7 @@ namespace Delly.DBunny.MsAccess
 #endif
                 if (row["DATA_TYPE"] != null && int.TryParse(row["DATA_TYPE"].ToString(), out int dataType))
                 {
-                    OleDbTypeMap.TryGetValue(dataType, out columnType);
+                    _oleDbTypeMap.TryGetValue(dataType, out columnType);
                     if (columnType is null) { columnType = "UNKNOWN"; }
                 }
 
