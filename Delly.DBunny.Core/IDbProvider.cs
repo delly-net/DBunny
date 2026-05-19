@@ -48,7 +48,7 @@ namespace Delly.DBunny.Core
         DataSet GetDataSet(DbCommand command);
 
         /// <summary>
-        /// Sql提供程序
+        /// SQL 提供程序
         /// </summary>
         ISqlProvider SqlProvider { get; }
 
@@ -57,7 +57,19 @@ namespace Delly.DBunny.Core
         /// </summary>
         /// <param name="connection">数据库连接</param>
         /// <returns>Schema 名称列表</returns>
-        Task<IReadOnlyList<string>> GetSchemas(DbConnection connection);
+        Task<IReadOnlyList<string>> GetSchemasAsync(DbConnection connection);
+
+        /// <summary>
+        /// 获取单个 Schema
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>Schema 名称，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        Task<string> GetSchemaAsync(DbConnection connection, string schema);
+#else
+        Task<string?> GetSchemaAsync(DbConnection connection, string schema);
+#endif
 
         /// <summary>
         /// 获取 Schema 中的所有表
@@ -65,25 +77,60 @@ namespace Delly.DBunny.Core
         /// <param name="connection">数据库连接</param>
         /// <param name="schema">Schema 名称</param>
         /// <returns>表描述符列表</returns>
-        Task<IReadOnlyList<DbTableDesciptor>> GetTables(DbConnection connection, string schema);
+        Task<IReadOnlyList<DbTableDesciptor>> GetTablesAsync(DbConnection connection, string schema);
+
+        /// <summary>
+        /// 获取单个表
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <returns>表描述符，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        Task<DbTableDesciptor> GetTableAsync(DbConnection connection, DbTableDesciptor tableDesciptor);
+#else
+        Task<DbTableDesciptor?> GetTableAsync(DbConnection connection, DbTableDesciptor tableDesciptor);
+#endif
 
         /// <summary>
         /// 获取表中的所有列
         /// </summary>
         /// <param name="connection">数据库连接</param>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>列描述符列表</returns>
-        Task<IReadOnlyList<DbColumnDesciptor>> GetColumns(DbConnection connection, string schema, string table);
+        Task<IReadOnlyList<DbColumnDesciptor>> GetColumnsAsync(DbConnection connection, DbTableDesciptor tableDesciptor);
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>列描述符，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        Task<DbColumnDesciptor> GetColumnAsync(DbConnection connection, DbTableDesciptor tableDesciptor, string column);
+#else
+        Task<DbColumnDesciptor?> GetColumnAsync(DbConnection connection, DbTableDesciptor tableDesciptor, string column);
+#endif
 
         /// <summary>
         /// 获取表中的所有索引
         /// </summary>
         /// <param name="connection">数据库连接</param>
-        /// <param name="schema">Schema 名称</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>索引描述符列表</returns>
-        Task<IReadOnlyList<DbIndexDesciptor>> GetIndexes(DbConnection connection, string schema, string table);
+        Task<IReadOnlyList<DbIndexDesciptor>> GetIndexesAsync(DbConnection connection, DbTableDesciptor tableDesciptor);
+
+        /// <summary>
+        /// 获取单个索引信息
+        /// </summary>
+        /// <param name="connection">数据库连接</param>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>索引描述符，若不存在则返回 null (仅 .NET 5.0+)</returns>
+#if NETSTANDARD2_0
+        Task<DbIndexDesciptor> GetIndexeAsync(DbConnection connection, DbIndexDesciptor indexDesciptor);
+#else
+        Task<DbIndexDesciptor?> GetIndexeAsync(DbConnection connection, DbIndexDesciptor indexDesciptor);
+#endif
     }
 }
 

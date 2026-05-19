@@ -32,7 +32,23 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
-        /// 获取特有类型名称
+        /// 获取数据库特定类型名称（包含自增长标识）
+        /// </summary>
+        /// <param name="columnType">列类型</param>
+        /// <param name="typeCode">类型代码</param>
+        /// <param name="autoIncrementFlag">自增长标识</param>
+        /// <param name="length">长度</param>
+        /// <param name="precision">精度</param>
+        /// <returns>SQLite 类型名称</returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        {
+            // SQLite uses INTEGER PRIMARY KEY AUTOINCREMENT for auto-increment columns
+            return GetSpecialTypeName(typeCode, length, precision);
+        }
+
+        /// <summary>
+        /// 获取数据库特定类型名称（根据 .NET 类型代码）
         /// </summary>
         /// <param name="typeCode">类型代码</param>
         /// <param name="length">长度</param>
@@ -62,13 +78,12 @@ namespace Delly.DBunny.Sqlite
                 case TypeCode.String:
                     if (length > 0) { return $"TEXT({length})"; }
                     return "TEXT";
-                default:
-                    throw new NotSupportedException($"Type code '{typeCode}' not supported.");
+                default: return string.Empty;
             }
         }
 
         /// <summary>
-        /// 获取特有类型名称
+        /// 获取数据库特定类型名称（根据列类型）
         /// </summary>
         /// <param name="columnType">列类型</param>
         /// <param name="length">长度</param>
@@ -95,8 +110,7 @@ namespace Delly.DBunny.Sqlite
                     return "TEXT";
                 case DbColumnType.TEXT:
                     return "TEXT";
-                default:
-                    throw new NotSupportedException($"Column type '{columnType}' not supported.");
+                default: return string.Empty;
             }
         }
 
@@ -146,6 +160,16 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
+        /// 获取单个 Schema
+        /// </summary>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>获取 Schema 的 SQL 命令</returns>
+        public Sqled GetSchemas(string schema)
+        {
+            throw new NotSupportedException("SQLite does not support schemas. HasSchema is false.");
+        }
+
+        /// <summary>
         /// 创建 Schema
         /// </summary>
         /// <param name="schema">Schema 名称</param>
@@ -181,15 +205,27 @@ namespace Delly.DBunny.Sqlite
         }
 
         /// <summary>
+        /// 获取单个表
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <returns>获取表的 SQL 命令</returns>
+        public Sqled GetTable(DbTableDesciptor tableDesciptor)
+        {
+            return $"SELECT name FROM sqlite_master WHERE type='table' AND name={GetSpecialName(tableDesciptor.TableName)}";
+        }
+
+        /// <summary>
         /// 获取创建表时的字段定义
         /// </summary>
-        /// <param name="column">列名称</param>
-        /// <param name="columnType">列类型</param>
-        /// <param name="primaryKey">是否为主键</param>
-        /// <param name="nullable">是否可空</param>
+        /// <param name="columnDesciptor">列描述符</param>
         /// <returns>字段定义 SQL</returns>
-        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        public Sqled CreateTableColumnDefine(DbColumnDesciptor columnDesciptor)
         {
+            var column = columnDesciptor.ColumnName;
+            var columnType = columnDesciptor.ColumnType;
+            var primaryKey = columnDesciptor.PrimaryKeyFlag;
+            var nullable = columnDesciptor.NullableFlag;
+
             if (primaryKey)
             {
                 return $"{GetSpecialName(column)} {columnType} NOT NULL PRIMARY KEY";
@@ -200,19 +236,19 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 创建表
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="columnDesciptors">列描述符集合</param>
         /// <returns>创建表的 SQL 命令</returns>
-        public Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors)
+        public Sqled CreateTable(DbTableDesciptor tableDesciptor, IList<DbColumnDesciptor> columnDesciptors)
         {
+            var table = tableDesciptor.TableName;
             var sql = new Sqled();
             sql.Builder.AppendLine($"CREATE TABLE {GetSpecialName(table)}(");
             for (int i = 0; i < columnDesciptors.Count; i++)
             {
                 var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column);
                 sql.Builder.Append(columnDefine.Sql);
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
@@ -224,12 +260,11 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 删除表
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>删除表的 SQL 命令</returns>
-        public Sqled DropTable(string schema, string table)
+        public Sqled DropTable(DbTableDesciptor tableDesciptor)
         {
-            return $"DROP TABLE IF EXISTS {GetSpecialName(table)};";
+            return $"DROP TABLE IF EXISTS {GetSpecialName(tableDesciptor.TableName)};";
         }
 
         #endregion
@@ -239,12 +274,22 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取列的 SQL 命令</returns>
-        public Sqled GetColumns(string schema, string table)
+        public Sqled GetColumns(DbTableDesciptor tableDesciptor)
         {
-            return $"PRAGMA table_info({GetSpecialName(table)})";
+            return $"PRAGMA table_info({GetSpecialName(tableDesciptor.TableName)})";
+        }
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
+        public Sqled GetColumn(DbTableDesciptor tableDesciptor, string column)
+        {
+            return $"PRAGMA table_info({GetSpecialName(tableDesciptor.TableName)})";
         }
 
         /// <summary>
@@ -254,12 +299,10 @@ namespace Delly.DBunny.Sqlite
         /// <returns>创建列的 SQL 命令</returns>
         public Sqled CreateColumn(DbColumnDesciptor columnDesciptor)
         {
-            var schema = columnDesciptor.SchemaName;
             var table = columnDesciptor.TableName;
             var column = columnDesciptor.ColumnName;
             var columnType = columnDesciptor.ColumnType;
             var nullable = columnDesciptor.NullableFlag;
-            var primaryKey = columnDesciptor.PrimaryKeyFlag;
 
             return $"ALTER TABLE {GetSpecialName(table)} ADD COLUMN {GetSpecialName(column)} {columnType}{(nullable ? " NULL" : " NOT NULL")};";
         }
@@ -267,14 +310,13 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 重命名列
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">新列名</param>
         /// <returns>重命名列的 SQL 命令</returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        public Sqled RenameColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget)
         {
-            return $"ALTER TABLE {GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
+            return $"ALTER TABLE {GetSpecialName(tableDesciptor.TableName)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
         }
 
         /// <summary>
@@ -291,27 +333,25 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 复制列
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">目标列名</param>
         /// <param name="columnType">列类型</param>
         /// <returns>复制列的 SQL 命令</returns>
-        public Sqled CopyColumn(string schema, string table, string column, string columnTarget, string columnType)
+        public Sqled CopyColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget, string columnType)
         {
-            return $"UPDATE {GetSpecialName(table)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
+            return $"UPDATE {GetSpecialName(tableDesciptor.TableName)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
         }
 
         /// <summary>
         /// 删除列
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">列名</param>
         /// <returns>删除列的 SQL 命令</returns>
-        public Sqled DropColumn(string schema, string table, string column)
+        public Sqled DropColumn(DbTableDesciptor tableDesciptor, string column)
         {
-            return $"ALTER TABLE {GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
+            return $"ALTER TABLE {GetSpecialName(tableDesciptor.TableName)} DROP COLUMN {GetSpecialName(column)};";
         }
 
         #endregion
@@ -321,12 +361,21 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 获取表的所有索引
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取索引的 SQL 命令</returns>
-        public Sqled GetIndexes(string schema, string table)
+        public Sqled GetIndexes(DbTableDesciptor tableDesciptor)
         {
-            return $"PRAGMA index_list({GetSpecialName(table)});";
+            return $"PRAGMA index_list({GetSpecialName(tableDesciptor.TableName)});";
+        }
+
+        /// <summary>
+        /// 获取单个索引
+        /// </summary>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>获取索引的 SQL 命令</returns>
+        public Sqled GetIndex(DbIndexDesciptor indexDesciptor)
+        {
+            return $"PRAGMA index_info({GetSpecialName(indexDesciptor.IndexName)});";
         }
 
         /// <summary>
@@ -336,7 +385,6 @@ namespace Delly.DBunny.Sqlite
         /// <returns>创建索引的 SQL 命令</returns>
         public Sqled CreateIndex(DbIndexDesciptor indexDesciptor)
         {
-            var schema = indexDesciptor.SchemaName;
             var table = indexDesciptor.TableName;
             var column = indexDesciptor.ColumnName;
             var unique = indexDesciptor.UniqueFlag;
@@ -350,13 +398,11 @@ namespace Delly.DBunny.Sqlite
         /// <summary>
         /// 删除索引
         /// </summary>
-        /// <param name="schema">Schema 名称（SQLite 中忽略）</param>
-        /// <param name="table">表名称</param>
-        /// <param name="column">列名</param>
+        /// <param name="indexDesciptor">索引描述符</param>
         /// <returns>删除索引的 SQL 命令</returns>
-        public Sqled DropIndex(string schema, string table, string column)
+        public Sqled DropIndex(DbIndexDesciptor indexDesciptor)
         {
-            return $"DROP INDEX IF EXISTS {table}_{column}_IDX;";
+            return $"DROP INDEX IF EXISTS {indexDesciptor.TableName}_{indexDesciptor.ColumnName}_IDX;";
         }
 
         #endregion

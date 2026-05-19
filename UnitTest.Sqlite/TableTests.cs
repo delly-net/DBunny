@@ -55,11 +55,11 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "CreatedAt", ColumnType = "TEXT(32)", PrimaryKeyFlag = false, NullableFlag = false }
         };
 
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName }, columnDesciptors);
 
         // Act
         await ExecuteNonQueryAsync(_connection, createTableSql);
-        var tables = await _provider.GetTables(_connection, string.Empty);
+        var tables = await _provider.GetTablesAsync(_connection, string.Empty);
 
         // Assert
         Assert.Contains(tables, t => t.TableName == tableName);
@@ -74,13 +74,13 @@ public class TableTests : IDisposable
         {
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false }
         };
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
 
         // Act
-        var dropTableSql = _provider.SqlProvider.DropTable(string.Empty, tableName);
+        var dropTableSql = _provider.SqlProvider.DropTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
         await ExecuteNonQueryAsync(_connection, dropTableSql);
-        var tables = await _provider.GetTables(_connection, string.Empty);
+        var tables = await _provider.GetTablesAsync(_connection, string.Empty);
 
         // Assert
         Assert.DoesNotContain(tables, t => t.TableName == tableName);
@@ -99,7 +99,7 @@ public class TableTests : IDisposable
         var columnDesciptor = new DbColumnDesciptor { SchemaName = string.Empty, TableName = tableName, ColumnName = "Price", ColumnType = "REAL", PrimaryKeyFlag = false, NullableFlag = true };
         var addColumnSql = _provider.SqlProvider.CreateColumn(columnDesciptor);
         await ExecuteNonQueryAsync(_connection, addColumnSql);
-        var columns = await _provider.GetColumns(_connection, string.Empty, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // Assert
         Assert.Contains(columns, c => c.ColumnName == "Price");
@@ -116,9 +116,9 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Status", ColumnType = "TEXT(50)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var dropColumnSql = _provider.SqlProvider.DropColumn(string.Empty, tableName, "Status");
+        var dropColumnSql = _provider.SqlProvider.DropColumn(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName }, "Status");
         await ExecuteNonQueryAsync(_connection, dropColumnSql);
-        var columns = await _provider.GetColumns(_connection, string.Empty, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(columns, c => c.ColumnName == "Status");
@@ -134,9 +134,9 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "OldName", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false });
 
         // Act
-        var renameColumnSql = _provider.SqlProvider.RenameColumn(string.Empty, tableName, "OldName", "NewName");
+        var renameColumnSql = _provider.SqlProvider.RenameColumn(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName }, "OldName", "NewName");
         await ExecuteNonQueryAsync(_connection, renameColumnSql);
-        var columns = await _provider.GetColumns(_connection, string.Empty, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // Assert
         Assert.DoesNotContain(columns, c => c.ColumnName == "OldName");
@@ -156,7 +156,7 @@ public class TableTests : IDisposable
         var indexDesciptor = new DbIndexDesciptor { SchemaName = string.Empty, TableName = tableName, IndexName = "Email", UniqueFlag = true, ColumnName = "Email" };
         var createIndexSql = _provider.SqlProvider.CreateIndex(indexDesciptor);
         await ExecuteNonQueryAsync(_connection, createIndexSql);
-        var indexes = await _provider.GetIndexes(_connection, string.Empty, tableName);
+        var indexes = await _provider.GetIndexesAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // Assert
         Assert.Contains(indexes, i => i.IndexName == $"{tableName}_Email_IDX");
@@ -172,7 +172,7 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false },
             new DbColumnDesciptor { ColumnName = "Value", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = false }
         };
-        var createTableSql = _provider.SqlProvider.CreateTable(string.Empty, tableName, columnDesciptors);
+        var createTableSql = _provider.SqlProvider.CreateTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName }, columnDesciptors);
         await ExecuteNonQueryAsync(_connection, createTableSql);
 
         var indexDesciptor = new DbIndexDesciptor { SchemaName = string.Empty, TableName = tableName, IndexName = "Value", UniqueFlag = false, ColumnName = "Value" };
@@ -180,12 +180,12 @@ public class TableTests : IDisposable
         await ExecuteNonQueryAsync(_connection, createIndexSql);
 
         // Act
-        var indexesBefore = await _provider.GetIndexes(_connection, string.Empty, tableName);
+        var indexesBefore = await _provider.GetIndexesAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // SQLite drop index
-        var dropIndexSql = _provider.SqlProvider.DropIndex(string.Empty, tableName, "Value");
+        var dropIndexSql = _provider.SqlProvider.DropIndex(indexDesciptor);
         await ExecuteNonQueryAsync(_connection, dropIndexSql);
-        var indexesAfter = await _provider.GetIndexes(_connection, string.Empty, tableName);
+        var indexesAfter = await _provider.GetIndexesAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // Assert
         var indexCountBefore = indexesBefore.Count;
@@ -193,7 +193,7 @@ public class TableTests : IDisposable
         Assert.Equal(indexCountBefore - 1, indexCountAfter);
 
         // Cleanup
-        var dropTableSql = _provider.SqlProvider.DropTable(string.Empty, tableName);
+        var dropTableSql = _provider.SqlProvider.DropTable(new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
         await ExecuteNonQueryAsync(_connection, dropTableSql);
     }
 
@@ -208,7 +208,7 @@ public class TableTests : IDisposable
             new DbColumnDesciptor { ColumnName = "Quantity", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Act
-        var columns = await _provider.GetColumns(_connection, string.Empty, tableName);
+        var columns = await _provider.GetColumnsAsync(_connection, new DbTableDesciptor { SchemaName = string.Empty, TableName = tableName });
 
         // Assert
         Assert.Equal(3, columns.Count);
@@ -238,7 +238,7 @@ public class TableTests : IDisposable
         await CreateSimpleTableAsync("Table3", new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false });
 
         // Act
-        var tables = await _provider.GetTables(_connection, string.Empty);
+        var tables = await _provider.GetTablesAsync(_connection, string.Empty);
 
         // Assert
         Assert.Contains(tables, t => t.TableName == "Table1");
@@ -379,9 +379,9 @@ public class TableTests : IDisposable
     public void SqlProvider_CreateTableColumnDefine_ShouldReturnCorrectDefinition()
     {
         // Act
-        var primaryKeyColumn = _provider.SqlProvider.CreateTableColumnDefine("Id", "INTEGER", true, false);
-        var nullableColumn = _provider.SqlProvider.CreateTableColumnDefine("Name", "TEXT(100)", false, false);
-        var nullableTrueColumn = _provider.SqlProvider.CreateTableColumnDefine("Age", "INTEGER", false, true);
+        var primaryKeyColumn = _provider.SqlProvider.CreateTableColumnDefine(new DbColumnDesciptor { ColumnName = "Id", ColumnType = "INTEGER", PrimaryKeyFlag = true, NullableFlag = false });
+        var nullableColumn = _provider.SqlProvider.CreateTableColumnDefine(new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false });
+        var nullableTrueColumn = _provider.SqlProvider.CreateTableColumnDefine(new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true });
 
         // Assert
         Assert.Equal("[Id] INTEGER NOT NULL PRIMARY KEY", primaryKeyColumn.Sql);

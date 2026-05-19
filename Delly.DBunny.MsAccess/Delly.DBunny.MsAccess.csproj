@@ -13,6 +13,7 @@
 		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 		<PackageTags>db database access sql data provider oledb msaccess mdb accdb dbunny netstandard dotnet dotnet5 dotnet8 aot</PackageTags>
 		<RepositoryUrl>https://github.com/delly-net/DBunny</RepositoryUrl>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<!-- 仅给支持的框架开启 Nullable -->

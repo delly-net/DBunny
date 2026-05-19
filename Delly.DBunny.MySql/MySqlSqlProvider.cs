@@ -32,7 +32,23 @@ namespace Delly.DBunny.MySql
         }
 
         /// <summary>
-        /// 获取特有类型名称
+        /// 获取数据库特定类型名称（包含自增长标识）
+        /// </summary>
+        /// <param name="columnType">列类型</param>
+        /// <param name="typeCode">类型代码</param>
+        /// <param name="autoIncrementFlag">自增长标识</param>
+        /// <param name="length">长度</param>
+        /// <param name="precision">精度</param>
+        /// <returns>MySQL 类型名称</returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        {
+            // MySQL handles AUTO_INCREMENT in column definition, not type
+            return GetSpecialTypeName(typeCode, length, precision);
+        }
+
+        /// <summary>
+        /// 获取数据库特定类型名称（根据 .NET 类型代码）
         /// </summary>
         /// <param name="typeCode">类型代码</param>
         /// <param name="length">长度</param>
@@ -78,7 +94,7 @@ namespace Delly.DBunny.MySql
         }
 
         /// <summary>
-        /// 获取特有类型名称
+        /// 获取数据库特定类型名称（根据列类型）
         /// </summary>
         /// <param name="columnType">列类型</param>
         /// <param name="length">长度</param>
@@ -175,6 +191,16 @@ namespace Delly.DBunny.MySql
         }
 
         /// <summary>
+        /// 获取单个 Schema
+        /// </summary>
+        /// <param name="schema">Schema 名称</param>
+        /// <returns>获取 Schema 的 SQL 命令</returns>
+        public Sqled GetSchemas(string schema)
+        {
+            throw new NotSupportedException("MySQL does not support separate schemas. Database and Schema are the same concept. HasSchema is false.");
+        }
+
+        /// <summary>
         /// 创建 Schema
         /// </summary>
         /// <param name="schema">Schema 名称</param>
@@ -210,15 +236,27 @@ namespace Delly.DBunny.MySql
         }
 
         /// <summary>
+        /// 获取单个表
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <returns>获取表的 SQL 命令</returns>
+        public Sqled GetTable(DbTableDesciptor tableDesciptor)
+        {
+            return $"SHOW TABLES FROM {GetSpecialName(tableDesciptor.SchemaName)} LIKE {GetSpecialName(tableDesciptor.TableName)}";
+        }
+
+        /// <summary>
         /// 获取创建表时的字段定义
         /// </summary>
-        /// <param name="column">列名称</param>
-        /// <param name="columnType">列类型</param>
-        /// <param name="primaryKey">是否为主键</param>
-        /// <param name="nullable">是否可空</param>
+        /// <param name="columnDesciptor">列描述符</param>
         /// <returns>字段定义 SQL</returns>
-        public Sqled CreateTableColumnDefine(string column, string columnType, bool primaryKey, bool nullable)
+        public Sqled CreateTableColumnDefine(DbColumnDesciptor columnDesciptor)
         {
+            var column = columnDesciptor.ColumnName;
+            var columnType = columnDesciptor.ColumnType;
+            var primaryKey = columnDesciptor.PrimaryKeyFlag;
+            var nullable = columnDesciptor.NullableFlag;
+
             if (primaryKey)
             {
                 return $"{GetSpecialName(column)} {columnType} NOT NULL AUTO_INCREMENT PRIMARY KEY";
@@ -229,19 +267,20 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 创建 表
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="columnDesciptors">列描述符集合</param>
         /// <returns>创建表的 SQL 命令</returns>
-        public Sqled CreateTable(string schema, string table, IList<DbColumnDesciptor> columnDesciptors)
+        public Sqled CreateTable(DbTableDesciptor tableDesciptor, IList<DbColumnDesciptor> columnDesciptors)
         {
+            var schema = tableDesciptor.SchemaName;
+            var table = tableDesciptor.TableName;
             var sql = new Sqled();
             sql.Builder.AppendLine($"CREATE TABLE {GetSpecialName(schema)}.{GetSpecialName(table)}(");
             for (int i = 0; i < columnDesciptors.Count; i++)
             {
                 var column = columnDesciptors[i];
                 sql.Builder.Append(new string(' ', 4));
-                var columnDefine = CreateTableColumnDefine(column.ColumnName, column.ColumnType, column.PrimaryKeyFlag, column.NullableFlag);
+                var columnDefine = CreateTableColumnDefine(column);
                 sql.Builder.Append(columnDefine.Sql);
                 if (i < columnDesciptors.Count - 1) { sql.Append(','); }
                 sql.Builder.AppendLine();
@@ -253,12 +292,11 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 删除 表
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>删除表的 SQL 命令</returns>
-        public Sqled DropTable(string schema, string table)
+        public Sqled DropTable(DbTableDesciptor tableDesciptor)
         {
-            return $"DROP TABLE IF EXISTS {GetSpecialName(schema)}.{GetSpecialName(table)};";
+            return $"DROP TABLE IF EXISTS {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)};";
         }
 
         #endregion
@@ -268,12 +306,22 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 获取表中所有列
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取列的 SQL 命令</returns>
-        public Sqled GetColumns(string schema, string table)
+        public Sqled GetColumns(DbTableDesciptor tableDesciptor)
         {
-            return $"SHOW COLUMNS FROM {GetSpecialName(schema)}.{GetSpecialName(table)}";
+            return $"SHOW COLUMNS FROM {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)}";
+        }
+
+        /// <summary>
+        /// 获取单个列
+        /// </summary>
+        /// <param name="tableDesciptor">表描述符</param>
+        /// <param name="column">列名称</param>
+        /// <returns>获取列的 SQL 命令</returns>
+        public Sqled GetColumn(DbTableDesciptor tableDesciptor, string column)
+        {
+            return $"SHOW COLUMNS FROM {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)} LIKE {GetSpecialName(column)}";
         }
 
         /// <summary>
@@ -288,7 +336,6 @@ namespace Delly.DBunny.MySql
             var column = columnDesciptor.ColumnName;
             var columnType = columnDesciptor.ColumnType;
             var nullable = columnDesciptor.NullableFlag;
-            var primaryKey = columnDesciptor.PrimaryKeyFlag;
 
             var nullableStr = nullable ? "NULL" : "NOT NULL";
             return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} ADD COLUMN {GetSpecialName(column)} {columnType} {nullableStr};";
@@ -297,14 +344,13 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 重命名列
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">新列名</param>
         /// <returns>重命名列的 SQL 命令</returns>
-        public Sqled RenameColumn(string schema, string table, string column, string columnTarget)
+        public Sqled RenameColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget)
         {
-            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
+            return $"ALTER TABLE {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)} RENAME COLUMN {GetSpecialName(column)} TO {GetSpecialName(columnTarget)};";
         }
 
         /// <summary>
@@ -328,27 +374,25 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 复制列
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">原列名</param>
         /// <param name="columnTarget">目标列名</param>
         /// <param name="columnType">列类型</param>
         /// <returns>复制列的 SQL 命令</returns>
-        public Sqled CopyColumn(string schema, string table, string column, string columnTarget, string columnType)
+        public Sqled CopyColumn(DbTableDesciptor tableDesciptor, string column, string columnTarget, string columnType)
         {
-            return $"UPDATE {GetSpecialName(schema)}.{GetSpecialName(table)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
+            return $"UPDATE {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)} SET {GetSpecialName(columnTarget)} = CAST({GetSpecialName(column)} AS {columnType});";
         }
 
         /// <summary>
         /// 删除列
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <param name="column">列名</param>
         /// <returns>删除列的 SQL 命令</returns>
-        public Sqled DropColumn(string schema, string table, string column)
+        public Sqled DropColumn(DbTableDesciptor tableDesciptor, string column)
         {
-            return $"ALTER TABLE {GetSpecialName(schema)}.{GetSpecialName(table)} DROP COLUMN {GetSpecialName(column)};";
+            return $"ALTER TABLE {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)} DROP COLUMN {GetSpecialName(column)};";
         }
 
         #endregion
@@ -358,12 +402,21 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 获取表的所有索引
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
+        /// <param name="tableDesciptor">表描述符</param>
         /// <returns>获取索引的 SQL 命令</returns>
-        public Sqled GetIndexes(string schema, string table)
+        public Sqled GetIndexes(DbTableDesciptor tableDesciptor)
         {
-            return $"SHOW INDEX FROM {GetSpecialName(schema)}.{GetSpecialName(table)}";
+            return $"SHOW INDEX FROM {GetSpecialName(tableDesciptor.SchemaName)}.{GetSpecialName(tableDesciptor.TableName)}";
+        }
+
+        /// <summary>
+        /// 获取单个索引
+        /// </summary>
+        /// <param name="indexDesciptor">索引描述符</param>
+        /// <returns>获取索引的 SQL 命令</returns>
+        public Sqled GetIndex(DbIndexDesciptor indexDesciptor)
+        {
+            return $"SHOW INDEX FROM {GetSpecialName(indexDesciptor.SchemaName)}.{GetSpecialName(indexDesciptor.TableName)} WHERE Key_name = {GetSpecialName(indexDesciptor.IndexName)}";
         }
 
         /// <summary>
@@ -388,13 +441,11 @@ namespace Delly.DBunny.MySql
         /// <summary>
         /// 删除 索引
         /// </summary>
-        /// <param name="schema">Schema 名称（MySQL 中即数据库名）</param>
-        /// <param name="table">表名称</param>
-        /// <param name="column">列名</param>
+        /// <param name="indexDesciptor">索引描述符</param>
         /// <returns>删除索引的 SQL 命令</returns>
-        public Sqled DropIndex(string schema, string table, string column)
+        public Sqled DropIndex(DbIndexDesciptor indexDesciptor)
         {
-            return $"DROP INDEX {table}_{column}_IDX ON {GetSpecialName(schema)}.{GetSpecialName(table)};";
+            return $"DROP INDEX {indexDesciptor.TableName}_{indexDesciptor.ColumnName}_IDX ON {GetSpecialName(indexDesciptor.SchemaName)}.{GetSpecialName(indexDesciptor.TableName)};";
         }
 
         #endregion

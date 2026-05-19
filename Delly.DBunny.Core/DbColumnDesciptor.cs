@@ -28,5 +28,10 @@ namespace Delly.DBunny.Core
         /// 可空标识
         /// </summary>
         public bool NullableFlag { get; set; }
+
+        /// <summary>
+        /// 自增长标识
+        /// </summary>
+        public bool AutoIncrementFlag { get; set; }
     }
 }

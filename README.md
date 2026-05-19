@@ -98,7 +98,8 @@ var columnDescriptors = new List<DbColumnDesciptor>
     new DbColumnDesciptor { ColumnName = "Name", ColumnType = "TEXT(100)", PrimaryKeyFlag = false, NullableFlag = false },
     new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
 };
-var createTableSql = provider.SqlProvider.CreateTable(string.Empty, "Users", columnDescriptors);
+var tableDesciptor = new DbTableDesciptor { TableName = "Users" };
+var createTableSql = provider.SqlProvider.CreateTable(tableDesciptor, columnDescriptors);
 
 using var createCommand = provider.GetDbCommand(connection);
 createCommand.CommandText = createTableSql.Sql;
@@ -155,7 +156,8 @@ var columnDescriptors = new List<DbColumnDesciptor>
     new DbColumnDesciptor { ColumnName = "Name", ColumnType = "NVARCHAR(100)", PrimaryKeyFlag = false, NullableFlag = false },
     new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INT", PrimaryKeyFlag = false, NullableFlag = true }
 };
-var createTableSql = provider.SqlProvider.CreateTable("dbo", "Users", columnDescriptors);
+var tableDesciptor = new DbTableDesciptor { SchemaName = "dbo", TableName = "Users" };
+var createTableSql = provider.SqlProvider.CreateTable(tableDesciptor, columnDescriptors);
 
 using var createCommand = provider.GetDbCommand(connection);
 createCommand.CommandText = createTableSql.Sql;
@@ -346,7 +348,8 @@ var columnDescriptors = new List<DbColumnDesciptor>
     new DbColumnDesciptor { ColumnName = "Age", ColumnType = "INTEGER", PrimaryKeyFlag = false, NullableFlag = true }
 };
 
-var createTableSql = provider.SqlProvider.CreateTable(string.Empty, "Users", columnDescriptors);
+var tableDesciptor = new DbTableDesciptor { TableName = "Users" };
+var createTableSql = provider.SqlProvider.CreateTable(tableDesciptor, columnDescriptors);
 
 using var command = provider.GetDbCommand(connection);
 command.CommandText = createTableSql.Sql;
