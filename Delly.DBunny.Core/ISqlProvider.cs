@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Delly.Modeling;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -62,7 +63,7 @@ namespace Delly.DBunny.Core
         /// <param name="length">长度</param>
         /// <param name="precision">精度</param>
         /// <returns>数据库特定类型名称</returns>
-        string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0);
+        string GetSpecialTypeName(ColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0);
 
         /// <summary>
         /// 获取数据库特定类型名称（根据 .NET 类型代码）
@@ -80,7 +81,7 @@ namespace Delly.DBunny.Core
         /// <param name="length">长度</param>
         /// <param name="precision">精度</param>
         /// <returns>数据库特定类型名称</returns>
-        string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0);
+        string GetSpecialTypeName(ColumnType columnType, int length = 0, int precision = 0);
 
         #endregion
 

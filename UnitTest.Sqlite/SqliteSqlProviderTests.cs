@@ -1,6 +1,7 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.Sqlite;
+using Delly.Modeling;
 using Xunit;
 
 namespace UnitTest.Sqlite;
@@ -117,8 +118,8 @@ public class SqliteSqlProviderTests
     public void GetSpecialTypeName_WithAutoIncrementFlag_ShouldIgnoreFlag()
     {
         // Act & Assert - SQLite doesn't use auto-increment in type name
-        var intType = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, false);
-        var intTypeAuto = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, true);
+        var intType = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, false);
+        var intTypeAuto = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, true);
 
         Assert.Equal("INTEGER", intType);
         Assert.Equal("INTEGER", intTypeAuto);

@@ -1,5 +1,6 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,7 +41,7 @@ namespace Delly.DBunny.SqlServer
         /// <param name="length">长度</param>
         /// <param name="precision">精度</param>
         /// <returns>SQL Server 类型名称</returns>
-        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
         {
             return GetSpecialTypeName(typeCode, length, precision);
         }
@@ -99,27 +100,27 @@ namespace Delly.DBunny.SqlServer
         /// <param name="precision">精度</param>
         /// <returns>SQL Server 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, int length = 0, int precision = 0)
         {
             switch (columnType)
             {
-                case DbColumnType.DECIMAL:
+                case ColumnType.DECIMAL:
                     if (length > 0 && precision > 0) { return $"DECIMAL({length},{precision})"; }
                     if (length > 0) { return $"DECIMAL({length},4)"; }
                     if (precision > 0) { return $"DECIMAL(18,{precision})"; }
                     return "DECIMAL(18,4)";
-                case DbColumnType.TINY:
+                case ColumnType.BOOL:
                     return "TINYINT";
-                case DbColumnType.INTEGER:
+                case ColumnType.INTEGER:
                     return "INT";
-                case DbColumnType.LONG:
+                case ColumnType.LONG:
                     return "BIGINT";
-                case DbColumnType.TIME:
+                case ColumnType.TIME:
                     return "DATETIME";
-                case DbColumnType.VARCHAR:
+                case ColumnType.VARCHAR:
                     if (length > 0) { return $"NVARCHAR({length})"; }
                     return "NVARCHAR(255)";
-                case DbColumnType.TEXT:
+                case ColumnType.TEXT:
                     return "NVARCHAR(MAX)";
                 default:
                     throw new NotSupportedException($"Column type '{columnType}' not supported.");

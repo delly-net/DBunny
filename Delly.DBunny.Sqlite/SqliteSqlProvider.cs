@@ -1,5 +1,6 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -42,7 +43,7 @@ namespace Delly.DBunny.Sqlite
         /// <param name="precision">精度</param>
         /// <returns>SQLite 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
         {
             // SQLite uses INTEGER PRIMARY KEY AUTOINCREMENT for auto-increment columns
             return GetSpecialTypeName(typeCode, length, precision);
@@ -91,25 +92,25 @@ namespace Delly.DBunny.Sqlite
         /// <param name="precision">精度</param>
         /// <returns>SQLite 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, int length = 0, int precision = 0)
         {
             // 兼容列类型特性定义
             switch (columnType)
             {
-                case DbColumnType.DECIMAL:
+                case ColumnType.DECIMAL:
                     return "REAL";
-                case DbColumnType.TINY:
+                case ColumnType.BOOL:
                     return "INTEGER";
-                case DbColumnType.INTEGER:
+                case ColumnType.INTEGER:
                     return "INTEGER";
-                case DbColumnType.LONG:
+                case ColumnType.LONG:
                     return "INTEGER";
-                case DbColumnType.TIME:
+                case ColumnType.TIME:
                     return "TEXT(32)";
-                case DbColumnType.VARCHAR:
+                case ColumnType.VARCHAR:
                     if (length > 0) { return $"TEXT({length})"; }
                     return "TEXT";
-                case DbColumnType.TEXT:
+                case ColumnType.TEXT:
                     return "TEXT";
                 default: throw new NotSupportedException($"Column type '{columnType}' not supported.");
             }

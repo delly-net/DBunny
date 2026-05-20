@@ -45,7 +45,7 @@ public interface ISqlProvider
 {
     string GetSpecialName(string name);
     string GetSpecialTypeName(TypeCode typeCode, int length = 0, int precision = 0);
-    string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0);
+    string GetSpecialTypeName(ColumnType columnType, int length = 0, int precision = 0);
 
     bool HasDatabase { get; }
     bool HasSchema { get; }
@@ -154,12 +154,12 @@ public class DbIndexDesciptor : DbTableDesciptor
 }
 ```
 
-### DbColumnType
+### ColumnType
 
 Enum for database column types.
 
 ```csharp
-public enum DbColumnType
+public enum ColumnType
 {
     UNKNOW,
     DECIMAL,

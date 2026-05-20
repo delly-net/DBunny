@@ -1,6 +1,7 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.PostgreSql;
+using Delly.Modeling;
 using Xunit;
 
 namespace UnitTest.PostgreSql;
@@ -116,7 +117,7 @@ public class PostgreSqlSqlProviderTests
     public void GetSpecialTypeName_WithAutoIncrementFlag_Integer32_ShouldReturnSerial()
     {
         // Act
-        var result = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, true);
+        var result = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, true);
 
         // Assert
         Assert.Equal("SERIAL", result);
@@ -126,7 +127,7 @@ public class PostgreSqlSqlProviderTests
     public void GetSpecialTypeName_WithAutoIncrementFlag_Integer64_ShouldReturnBigSerial()
     {
         // Act
-        var result = _provider.GetSpecialTypeName(DbColumnType.LONG, TypeCode.Int64, true);
+        var result = _provider.GetSpecialTypeName(ColumnType.LONG, TypeCode.Int64, true);
 
         // Assert
         Assert.Equal("BIGSERIAL", result);
@@ -136,7 +137,7 @@ public class PostgreSqlSqlProviderTests
     public void GetSpecialTypeName_WithAutoIncrementFlag_Integer16_ShouldReturnSmallSerial()
     {
         // Act
-        var result = _provider.GetSpecialTypeName(DbColumnType.TINY, TypeCode.Int16, true);
+        var result = _provider.GetSpecialTypeName(ColumnType.BOOL, TypeCode.Int16, true);
 
         // Assert
         Assert.Equal("SMALLSERIAL", result);
@@ -146,7 +147,7 @@ public class PostgreSqlSqlProviderTests
     public void GetSpecialTypeName_WithoutAutoIncrementFlag_ShouldReturnRegularType()
     {
         // Act
-        var result = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, false);
+        var result = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, false);
 
         // Assert
         Assert.Equal("INTEGER", result);

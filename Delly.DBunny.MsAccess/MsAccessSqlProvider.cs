@@ -1,5 +1,6 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,7 +41,7 @@ namespace Delly.DBunny.MsAccess
         /// <param name="length">长度</param>
         /// <param name="precision">精度</param>
         /// <returns>Access 类型名称</returns>
-        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
         {
             return GetSpecialTypeName(typeCode, length, precision);
         }
@@ -95,25 +96,25 @@ namespace Delly.DBunny.MsAccess
         /// <param name="precision"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        public string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, int length = 0, int precision = 0)
         {
             switch (columnType)
             {
-                case DbColumnType.DECIMAL:
+                case ColumnType.DECIMAL:
                     return "CURRENCY";
-                case DbColumnType.TINY:
+                case ColumnType.BOOL:
                     return "SMALLINT";
-                case DbColumnType.INTEGER:
+                case ColumnType.INTEGER:
                     return "INTEGER";
-                case DbColumnType.LONG:
+                case ColumnType.LONG:
                     return "LONG";
-                case DbColumnType.TIME:
+                case ColumnType.TIME:
                     return "DATETIME";
-                case DbColumnType.VARCHAR:
+                case ColumnType.VARCHAR:
                     if (length > 0 && length <= 255)
                         return $"VARCHAR({length})";
                     return "LONGTEXT";
-                case DbColumnType.TEXT:
+                case ColumnType.TEXT:
                     return "LONGTEXT";
                 default:
                     throw new NotSupportedException($"Column type '{columnType}' not supported.");

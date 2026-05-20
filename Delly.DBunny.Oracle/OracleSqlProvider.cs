@@ -1,5 +1,6 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -41,7 +42,7 @@ namespace Delly.DBunny.Oracle
         /// <param name="precision">精度</param>
         /// <returns>Oracle 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public string GetSpecialTypeName(DbColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, TypeCode typeCode, bool autoIncrementFlag, int length = 0, int precision = 0)
         {
             // Oracle uses SEQUENCE for auto-increment, not column types
             return GetSpecialTypeName(typeCode, length, precision);
@@ -101,29 +102,29 @@ namespace Delly.DBunny.Oracle
         /// <param name="precision">精度</param>
         /// <returns>Oracle 类型名称</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public string GetSpecialTypeName(DbColumnType columnType, int length = 0, int precision = 0)
+        public string GetSpecialTypeName(ColumnType columnType, int length = 0, int precision = 0)
         {
             // 兼容列类型特性定义
             switch (columnType)
             {
-                case DbColumnType.DECIMAL:
+                case ColumnType.DECIMAL:
                     if (length > 0 && precision > 0) { return $"NUMBER({length},{precision})"; }
                     if (length > 0) { return $"NUMBER({length})"; }
                     if (precision > 0) { return $"NUMBER(18,{precision})"; }
                     return "NUMBER(18,4)";
-                case DbColumnType.TINY:
+                case ColumnType.BOOL:
                     return "NUMBER(3)";
-                case DbColumnType.INTEGER:
+                case ColumnType.INTEGER:
                     return "NUMBER(10)";
-                case DbColumnType.LONG:
+                case ColumnType.LONG:
                     return "NUMBER(19)";
-                case DbColumnType.TIME:
+                case ColumnType.TIME:
                     return "TIMESTAMP";
-                case DbColumnType.VARCHAR:
+                case ColumnType.VARCHAR:
                     if (length > 0 && length <= 4000) { return $"VARCHAR2({length})"; }
                     if (length > 4000) { return $"CLOB"; }
                     return "VARCHAR2(255)";
-                case DbColumnType.TEXT:
+                case ColumnType.TEXT:
                     return "CLOB";
                 default:
                     throw new NotSupportedException($"Column type '{columnType}' not supported.");

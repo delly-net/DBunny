@@ -3,6 +3,7 @@ using Delly.DBunny.Connecting.Extension;
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.PostgreSql;
+using Delly.Modeling;
 using System.Data.Common;
 using System.Linq;
 using Xunit;
@@ -343,16 +344,16 @@ public class TableTests : IDisposable
     }
 
     [Fact]
-    public void SqlProvider_GetSpecialTypeName_DbColumnType_ShouldReturnCorrectTypes()
+    public void SqlProvider_GetSpecialTypeName_ColumnType_ShouldReturnCorrectTypes()
     {
         // Act
-        var tinyType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.TINY);
-        var intType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.INTEGER);
-        var longType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.LONG);
-        var decimalType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL);
-        var varcharType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR);
-        var textType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.TEXT);
-        var timeType = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.TIME);
+        var tinyType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.BOOL);
+        var intType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.INTEGER);
+        var longType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.LONG);
+        var decimalType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL);
+        var varcharType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR);
+        var textType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.TEXT);
+        var timeType = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.TIME);
 
         // Assert
         Assert.Equal("SMALLINT", tinyType);
@@ -368,8 +369,8 @@ public class TableTests : IDisposable
     public void SqlProvider_GetSpecialTypeName_VarcharWithLength_ShouldIncludeLength()
     {
         // Act
-        var varchar50 = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 50);
-        var varchar100 = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 100);
+        var varchar50 = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 50);
+        var varchar100 = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 100);
 
         // Assert
         Assert.Equal("VARCHAR(50)", varchar50);
@@ -380,8 +381,8 @@ public class TableTests : IDisposable
     public void SqlProvider_GetSpecialTypeName_DecimalWithPrecision_ShouldIncludePrecision()
     {
         // Act
-        var decimal182 = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL, 18, 2);
-        var decimal104 = _fixture.Provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL, 10, 4);
+        var decimal182 = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL, 18, 2);
+        var decimal104 = _fixture.Provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL, 10, 4);
 
         // Assert
         Assert.Equal("NUMERIC(18,2)", decimal182);

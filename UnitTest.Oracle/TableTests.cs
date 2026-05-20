@@ -5,6 +5,7 @@ using Delly.DBunny.Core.Providing.Extension;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.Oracle;
 using Delly.DBunny.Providing;
+using Delly.Modeling;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -442,16 +443,16 @@ public class TableTests : IAsyncLifetime
     }
 
     [Fact]
-    public void SqlProvider_GetSpecialTypeName_DbColumnType_ShouldReturnCorrectTypes()
+    public void SqlProvider_GetSpecialTypeName_ColumnType_ShouldReturnCorrectTypes()
     {
         // Act
-        var tinyType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TINY);
-        var intType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.INTEGER);
-        var longType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.LONG);
-        var decimalType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL);
-        var varcharType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR);
-        var textType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TEXT);
-        var timeType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TIME);
+        var tinyType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.BOOL);
+        var intType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.INTEGER);
+        var longType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.LONG);
+        var decimalType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL);
+        var varcharType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR);
+        var textType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.TEXT);
+        var timeType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.TIME);
 
         // Assert
         Assert.Equal("NUMBER(3)", tinyType);
@@ -467,9 +468,9 @@ public class TableTests : IAsyncLifetime
     public void SqlProvider_GetSpecialTypeName_VarcharWithLength_ShouldIncludeLength()
     {
         // Act
-        var varchar50 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 50);
-        var varchar100 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 100);
-        var varchar5000 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 5000);
+        var varchar50 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 50);
+        var varchar100 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 100);
+        var varchar5000 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 5000);
 
         // Assert
         Assert.Equal("VARCHAR2(50)", varchar50);
@@ -481,8 +482,8 @@ public class TableTests : IAsyncLifetime
     public void SqlProvider_GetSpecialTypeName_DecimalWithPrecision_ShouldIncludePrecision()
     {
         // Act
-        var decimal182 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL, 18, 2);
-        var decimal104 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL, 10, 4);
+        var decimal182 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL, 18, 2);
+        var decimal104 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL, 10, 4);
 
         // Assert
         Assert.Equal("NUMBER(18,2)", decimal182);

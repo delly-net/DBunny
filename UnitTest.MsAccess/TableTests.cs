@@ -5,6 +5,7 @@ using Delly.DBunny.Core.Providing.Extension;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.MsAccess;
 using Delly.DBunny.Providing;
+using Delly.Modeling;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -391,16 +392,16 @@ public class TableTests : IDisposable
     }
 
     [Fact]
-    public void SqlProvider_GetSpecialTypeName_DbColumnType_ShouldReturnCorrectTypes()
+    public void SqlProvider_GetSpecialTypeName_ColumnType_ShouldReturnCorrectTypes()
     {
         // Act
-        var tinyType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TINY);
-        var intType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.INTEGER);
-        var longType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.LONG);
-        var decimalType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.DECIMAL);
-        var varcharType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR);
-        var textType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TEXT);
-        var timeType = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.TIME);
+        var tinyType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.BOOL);
+        var intType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.INTEGER);
+        var longType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.LONG);
+        var decimalType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.DECIMAL);
+        var varcharType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR);
+        var textType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.TEXT);
+        var timeType = _provider.SqlProvider.GetSpecialTypeName(ColumnType.TIME);
 
         // Assert
         Assert.Equal("SMALLINT", tinyType);
@@ -416,9 +417,9 @@ public class TableTests : IDisposable
     public void SqlProvider_GetSpecialTypeName_VarcharWithLength_ShouldIncludeLength()
     {
         // Act
-        var varchar50 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 50);
-        var varchar100 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 100);
-        var varchar300 = _provider.SqlProvider.GetSpecialTypeName(DbColumnType.VARCHAR, 300);
+        var varchar50 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 50);
+        var varchar100 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 100);
+        var varchar300 = _provider.SqlProvider.GetSpecialTypeName(ColumnType.VARCHAR, 300);
 
         // Assert
         Assert.Equal("VARCHAR(50)", varchar50);
@@ -497,7 +498,7 @@ public class TableTests : IDisposable
     public void SqlProvider_GetSpecialTypeName_UnsupportedDbType_ShouldThrowNotSupportedException()
     {
         // Act & Assert
-        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSpecialTypeName(DbColumnType.UNKNOW));
+        Assert.Throws<NotSupportedException>(() => _provider.SqlProvider.GetSpecialTypeName(ColumnType.UNSET));
     }
 
     [Fact]

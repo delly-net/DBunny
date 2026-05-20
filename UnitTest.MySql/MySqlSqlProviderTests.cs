@@ -1,6 +1,7 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.MySql;
+using Delly.Modeling;
 using Xunit;
 
 namespace UnitTest.MySql;
@@ -116,8 +117,8 @@ public class MySqlSqlProviderTests
     public void GetSpecialTypeName_WithAutoIncrementFlag_ShouldIgnoreFlag()
     {
         // Act & Assert - MySQL handles AUTO_INCREMENT in column definition, not type
-        var intType = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, false);
-        var intTypeAuto = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, true);
+        var intType = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, false);
+        var intTypeAuto = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, true);
 
         Assert.Equal("INT", intType);
         Assert.Equal("INT", intTypeAuto);

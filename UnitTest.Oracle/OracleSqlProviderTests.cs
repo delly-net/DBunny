@@ -1,6 +1,7 @@
 using Delly.DBunny.Core;
 using Delly.DBunny.Core.Sql.Extension;
 using Delly.DBunny.Oracle;
+using Delly.Modeling;
 using Xunit;
 
 namespace UnitTest.Oracle;
@@ -103,8 +104,8 @@ public class OracleSqlProviderTests
     public void GetSpecialTypeName_WithAutoIncrementFlag_ShouldIgnoreFlag()
     {
         // Act & Assert - Oracle uses SEQUENCE for auto-increment, not column types
-        var intType = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, false);
-        var intTypeAuto = _provider.GetSpecialTypeName(DbColumnType.INTEGER, TypeCode.Int32, true);
+        var intType = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, false);
+        var intTypeAuto = _provider.GetSpecialTypeName(ColumnType.INTEGER, TypeCode.Int32, true);
 
         Assert.Equal("NUMBER(10)", intType);
         Assert.Equal("NUMBER(10)", intTypeAuto);
