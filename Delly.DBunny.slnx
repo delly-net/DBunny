@@ -8,6 +8,7 @@
     <Project Path="UnitTest.SqlServer/UnitTest.SqlServer.csproj" />
   </Folder>
   <Project Path="Delly.DBunny.Core/Delly.DBunny.Core.csproj" />
+  <Project Path="Delly.DBunny.Linq/Delly.DBunny.Linq.csproj" Id="b5040f7a-de87-4e0c-9b44-4a73a2b1f209" />
   <Project Path="Delly.DBunny.MsAccess/Delly.DBunny.MsAccess.csproj" />
   <Project Path="Delly.DBunny.MySql/Delly.DBunny.MySql.csproj" />
   <Project Path="Delly.DBunny.Oracle/Delly.DBunny.Oracle.csproj" />

@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<!-- 多目标框架：Standard2.0 + .NET5 + .NET8(AOT) -->
-		<TargetFrameworks>netstandard2.0;net5.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
 		<Version>2026.5.7</Version>
 		<Authors>Delly.Net</Authors>
 		<Description>Core for Delly.DBunny</Description>
@@ -38,8 +38,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Delly.Modeling" Version="2026.5.3" />
-	  <PackageReference Include="Delly.Modeling.Generator" Version="2026.5.3" />
+	  <PackageReference Include="Delly.Modeling" Version="2026.5.18" />
+	  <PackageReference Include="Delly.Modeling.Generator" Version="2026.5.18" />
 	</ItemGroup>
 
 </Project>

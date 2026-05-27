@@ -1,5 +1,6 @@
 ﻿using Delly.DBunny;
 using Delly.DBunny.Core;
+using Delly.Modeling;
 using System;
 using System.Threading;
 
@@ -18,6 +19,7 @@ namespace Delly.DBunny.Working
         private readonly IDbConnectionFactory _connectionFactory;
         private readonly IDbFilterFactory _filterFactory;
         private readonly IDbProviderFactory _providerFactory;
+        private readonly IEntityModelFactory _entityModelFactory;
 
         /// <summary>
         /// 数据库作业管理器
@@ -25,12 +27,14 @@ namespace Delly.DBunny.Working
         public DefaultDbManager(
             IDbConnectionFactory connectionFactory,
             IDbFilterFactory filterFactory,
-            IDbProviderFactory providerFactory
+            IDbProviderFactory providerFactory,
+            IEntityModelFactory entityModelFactory
             )
         {
             _connectionFactory = connectionFactory;
             _filterFactory = filterFactory;
             _providerFactory = providerFactory;
+            _entityModelFactory = entityModelFactory;
         }
 
         /// <summary>
@@ -44,6 +48,11 @@ namespace Delly.DBunny.Working
         public IDbProviderFactory ProviderFactory => _providerFactory;
 
         /// <summary>
+        /// 实体建模工厂
+        /// </summary>
+        public IEntityModelFactory EntityModelFactory => _entityModelFactory;
+
+        /// <summary>
         /// 创建一个数据库工作者
         /// </summary>
         /// <returns></returns>
@@ -52,7 +61,7 @@ namespace Delly.DBunny.Working
             var connectionDescriptor = _connectionFactory.GetConnection(connectionName);
             var provider = _providerFactory.GetProvider(connectionDescriptor.DatabaseType);
             if (provider is null) { throw new NotSupportedException($"Database type '{connectionDescriptor.DatabaseType}' not supported."); }
-            var work = new DefaultDbWork(this, provider, connectionDescriptor, _filterFactory.GetFilters());
+            var work = new DefaultDbWork(this, provider, _entityModelFactory, connectionDescriptor, _filterFactory.GetFilters());
             SetCurrentWork(work);
             return work;
         }

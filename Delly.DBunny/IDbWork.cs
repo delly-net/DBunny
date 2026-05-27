@@ -1,4 +1,5 @@
 ﻿using Delly.DBunny.Core;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -11,6 +12,12 @@ namespace Delly.DBunny
     /// </summary>
     public interface IDbWork : IDisposable
     {
+
+        /// <summary>
+        /// 实体建模工厂
+        /// </summary>
+        IEntityModelFactory EntityModelFactory { get; }
+
         /// <summary>
         /// 作业管理器
         /// </summary>

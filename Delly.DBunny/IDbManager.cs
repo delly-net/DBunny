@@ -1,4 +1,5 @@
 ﻿using Delly.DBunny.Core;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,6 +20,11 @@ namespace Delly.DBunny
         /// 提供程序工厂
         /// </summary>
         IDbProviderFactory ProviderFactory { get; }
+
+        /// <summary>
+        /// 实体建模工厂
+        /// </summary>
+        IEntityModelFactory EntityModelFactory { get; }
 
         /// <summary>
         /// 创建一个新的作业

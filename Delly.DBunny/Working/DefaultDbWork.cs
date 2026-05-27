@@ -1,5 +1,6 @@
 ﻿using Delly.DBunny;
 using Delly.DBunny.Core;
+using Delly.Modeling;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -17,6 +18,7 @@ namespace Delly.DBunny.Working
         private readonly List<Sqled> _sqleds;
         private readonly IDbManager _manager;
         private readonly IDbProvider _provider;
+        private readonly IEntityModelFactory _entityModelFactory;
         private readonly DbConnectionDescriptor _connectionDescriptor;
         private readonly IEnumerable<IDbFilter> _filters;
 
@@ -26,6 +28,7 @@ namespace Delly.DBunny.Working
         public DefaultDbWork(
             IDbManager manager,
             IDbProvider provider,
+            IEntityModelFactory entityModelFactory,
             DbConnectionDescriptor connectionDescriptor,
             IEnumerable<IDbFilter> filters
             )
@@ -33,6 +36,7 @@ namespace Delly.DBunny.Working
             _sqleds = new List<Sqled>();
             _manager = manager;
             _provider = provider;
+            _entityModelFactory = entityModelFactory;
             _connectionDescriptor = connectionDescriptor;
             _filters = filters;
         }
@@ -61,6 +65,11 @@ namespace Delly.DBunny.Working
         /// 过滤器 集合
         /// </summary>
         public IEnumerable<IDbFilter> Filters => _filters;
+
+        /// <summary>
+        /// 实体建模工厂
+        /// </summary>
+        public IEntityModelFactory EntityModelFactory => _entityModelFactory;
 
         /// <summary>
         /// 获取Sql命令
