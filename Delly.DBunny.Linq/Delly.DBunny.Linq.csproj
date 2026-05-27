@@ -15,7 +15,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Delly.DBunny.Core\Delly.DBunny.Core.csproj" />
-    <PackageReference Include="Delly.Modeling" Version="2026.5.18" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Dependency\" />
   </ItemGroup>
 
 </Project>

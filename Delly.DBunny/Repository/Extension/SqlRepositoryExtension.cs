@@ -1,5 +1,6 @@
 ﻿using Delly.DBunny;
 using Delly.DBunny.Core;
+using Delly.DBunny.Linq.Query;
 using Delly.DBunny.Reading.Extension;
 using Delly.Modeling;
 using Eazy.Data.Work.Extension;
